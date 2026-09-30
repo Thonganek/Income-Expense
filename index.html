@@ -5,7 +5,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f5b301" />
-  <title>MoneyBook</title>
+  <title>ระบบการจัดการท่าข้าวแม่ดา ส.รุ่งเรือง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@600;800;900&display=swap" rel="stylesheet" />
   <style>
 :root {
   --bg: #fff8e1;
@@ -1067,6 +1070,342 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
 .login-screen { background: transparent; }
 .chart-tip { background: rgba(255, 255, 255, 0.95); }
 
+/* ---------- Hologram gold theme: ท่าข้าวแม่ดา ส.รุ่งเรือง ---------- */
+
+:root {
+  /* ฟอยล์โฮโลแกรมโทนทอง แซมประกายมุก (ชมพู/มิ้นต์/ฟ้าอ่อน) เหมือนสติกเกอร์โฮโลแกรม */
+  --holo-foil: linear-gradient(115deg, #fff6c8 0%, #ffd54a 18%, #ffe9f3 32%, #ffc107 46%, #e6fff4 60%, #ffb300 74%, #eaf4ff 86%, #ffd54a 100%);
+  --holo-ring: conic-gradient(from 0deg, #ffd54a, #fff3b0, #ffc1dc, #ffb300, #c9fff0, #ffe066, #cfe4ff, #ffd54a);
+}
+
+@keyframes holoShift { to { background-position: 200% center; } }
+@keyframes holoSpin { to { transform: rotate(360deg); } }
+@keyframes holoSweep { 0%, 55% { transform: translateX(-130%) skewX(-18deg); } 100% { transform: translateX(260%) skewX(-18deg); } }
+@keyframes holoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes holoPulse {
+  0%, 100% { box-shadow: 0 0 0 6px rgba(255, 213, 74, 0.18), 0 12px 40px rgba(255, 180, 0, 0.35); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 213, 74, 0.1), 0 16px 60px rgba(255, 190, 40, 0.55); }
+}
+@keyframes scanDown { from { transform: translateY(-100%); } to { transform: translateY(100vh); } }
+
+/* แถบหัว: กระจกใส + เส้นโฮโลแกรมวิ่งด้านล่าง */
+.topbar {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.82), rgba(255, 250, 225, 0.72));
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 0;
+}
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--holo-foil);
+  background-size: 200% auto;
+  animation: holoShift 5s linear infinite;
+  box-shadow: 0 0 12px rgba(255, 200, 40, 0.6);
+}
+
+.brand strong {
+  font-family: "Noto Serif Thai", "Leelawadee UI", serif;
+  font-size: 1.12rem;
+  font-weight: 900;
+  background: linear-gradient(90deg, #7a4f00, #c98a00 20%, #ff9fc7 35%, #e0a800 50%, #3fc9a8 62%, #b87800 78%, #7a4f00);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: holoShift 6s linear infinite;
+}
+
+/* ตราสัญลักษณ์: วงแหวนฟอยล์หมุน */
+.brand-mark, .crest-emblem {
+  position: relative;
+  isolation: isolate;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #fff4c2 45%, #ffe07a 100%);
+  color: #4a3000;
+}
+.brand-mark { width: 42px; height: 42px; font-size: 1.3rem; box-shadow: 0 6px 18px rgba(240, 170, 0, 0.4); }
+.brand-mark::before, .crest-emblem::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--holo-ring);
+  animation: holoSpin 6s linear infinite;
+}
+.brand-mark::after, .crest-emblem::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #fff4c2 45%, #ffe07a 100%);
+}
+
+/* ปุ่มหลัก: ประกายแสงวิ่งผ่าน */
+.primary-btn { position: relative; overflow: hidden; }
+.primary-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  animation: holoSweep 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.nav-btn.is-active, .tab-btn.is-active {
+  background: var(--holo-foil);
+  background-size: 200% auto;
+  animation: holoShift 8s linear infinite;
+}
+
+/* หน้าเข้าสู่ระบบ */
+.login-screen { position: relative; overflow: hidden; background: transparent; }
+.login-screen::before {
+  content: "";
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -10%;
+  height: 55%;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(214, 150, 0, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 150, 0, 0.22) 1px, transparent 1px);
+  background-size: 48px 48px;
+  transform: perspective(600px) rotateX(62deg);
+  transform-origin: bottom;
+  mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0.9), transparent 85%);
+  -webkit-mask-image: linear-gradient(0deg, rgba(0, 0, 0, 0.9), transparent 85%);
+}
+.login-screen::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 140px;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(255, 213, 74, 0.16) 70%, rgba(255, 240, 170, 0.5) 98%, transparent);
+  animation: scanDown 7s linear infinite;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  width: min(440px, 100%);
+  padding: 30px 28px 26px;
+  border: 2px solid transparent;
+  border-radius: 24px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 230, 0.78)) padding-box,
+    var(--holo-foil) border-box;
+  background-size: 100% 100%, 200% 100%;
+  animation: holoShift 6s linear infinite;
+  box-shadow: 0 30px 80px rgba(200, 140, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+.login-card::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), rgba(255, 200, 230, 0.25), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  animation: holoSweep 5s ease-in-out infinite;
+}
+
+.login-crest { display: grid; justify-items: center; text-align: center; gap: 2px; margin-bottom: 4px; }
+.crest-emblem {
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  font-size: 2.7rem;
+  animation: holoFloat 4s ease-in-out infinite, holoPulse 3.5s ease-in-out infinite;
+}
+.crest-emblem::before { inset: -5px; }
+.crest-kicker { margin: 0; color: #a06d00; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.35em; }
+.crest-title {
+  margin: 0;
+  font-family: "Noto Serif Thai", "Leelawadee UI", serif;
+  font-size: 2.3rem;
+  font-weight: 900;
+  line-height: 1.25;
+  background: linear-gradient(90deg, #7a4f00, #c98a00 18%, #ff8fbf 32%, #e0a800 48%, #2fbf9c 62%, #c98a00 78%, #7a4f00);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: holoShift 5s linear infinite;
+  filter: drop-shadow(0 2px 6px rgba(255, 190, 40, 0.35));
+}
+.crest-sub {
+  margin: 0;
+  font-family: "Noto Serif Thai", "Leelawadee UI", serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #5a3d00;
+  letter-spacing: 0.14em;
+}
+.crest-divider { display: flex; align-items: center; gap: 10px; width: 70%; margin-top: 10px; color: #e0a800; font-size: 0.7rem; }
+.crest-divider::before, .crest-divider::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--holo-foil);
+  background-size: 200% auto;
+  animation: holoShift 4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar::after, .brand strong, .brand-mark::before, .crest-emblem, .crest-emblem::before, .crest-title, .crest-divider::before, .crest-divider::after,
+  .primary-btn::after, .nav-btn.is-active, .tab-btn.is-active, .login-screen::after, .login-card, .login-card::before { animation: none; }
+}
+
+/* ---------- ซื้อ-ขายข้าว ---------- */
+
+.rice-panel { display: none; }
+.rice-panel.is-active { display: grid; gap: 14px; }
+.rice-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; align-items: start; }
+.rice-two { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.rice-form { display: grid; gap: 12px; }
+.rice-form fieldset { display: grid; gap: 10px; }
+.rice-form label { display: grid; gap: 4px; min-width: 0; }
+.rice-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rice-span-2 { grid-column: 1 / -1; }
+.rice-paid-row { align-self: end; min-height: 40px; }
+.rice-output {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.rice-kind input[value="buy"]:checked + span { color: #0f7a55; }
+.rice-kind input[value="sell"]:checked + span { color: #b0561b; }
+.rice-app.is-busy .rice-workspace { opacity: 0.6; pointer-events: none; }
+.rice-app.is-readonly .rice-form button[type="submit"] { opacity: 0.5; }
+
+/* ใบคำนวณด้านข้าง: หน้าตาเหมือนใบเสร็จฟอยล์โฮโลแกรม */
+.rice-receipt {
+  position: sticky;
+  top: 76px;
+  display: grid;
+  gap: 10px;
+  border: 2px solid transparent;
+  background: linear-gradient(170deg, #ffffff, #fffaf0) padding-box, var(--holo-foil) border-box;
+  background-size: 100% 100%, 200% 100%;
+  animation: holoShift 7s linear infinite;
+}
+.receipt-head { text-align: center; padding-bottom: 8px; border-bottom: 1px dashed rgba(200, 150, 20, 0.5); }
+.receipt-head strong { display: block; font-family: "Noto Serif Thai", "Leelawadee UI", serif; font-size: 1.05rem; }
+.receipt-head small { color: var(--muted); font-size: 0.78rem; }
+.receipt-lines { display: grid; gap: 4px; font-size: 0.88rem; }
+.receipt-line { display: flex; justify-content: space-between; gap: 10px; font-variant-numeric: tabular-nums; }
+.receipt-line span { color: var(--muted); }
+.receipt-line.is-minus b { color: var(--expense-ink); }
+.receipt-line.is-strong { padding-top: 6px; border-top: 1px dashed rgba(200, 150, 20, 0.5); font-weight: 900; }
+.receipt-total {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--holo-foil);
+  background-size: 200% auto;
+  animation: holoShift 6s linear infinite;
+  text-align: center;
+}
+.receipt-total span { font-size: 0.8rem; font-weight: 800; color: #5a3d00; }
+.receipt-total strong { font-size: 1.6rem; line-height: 1.15; color: #2f2000; font-variant-numeric: tabular-nums; }
+.receipt-total small { color: #5a3d00; font-size: 0.74rem; }
+
+.rice-sources { display: grid; gap: 8px; }
+.rice-source-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.rice-source-row small { grid-column: 1 / -1; margin-top: -4px; color: var(--muted); font-size: 0.74rem; }
+.rice-source-row small.is-warn { color: var(--expense-ink); font-weight: 700; }
+
+.rice-filters { grid-template-columns: minmax(200px, 1.4fr) repeat(4, minmax(120px, 1fr)) auto; }
+.rice-table { min-width: 940px; }
+.rice-table td small, .rice-mini-table td small { display: block; color: var(--muted); font-size: 0.74rem; }
+.rice-mini-table { min-width: 480px; }
+.data-table tr.rice-total-row td { font-weight: 900; border-top: 2px solid rgba(240, 170, 0, 0.45); }
+.kind-badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 800; white-space: nowrap; }
+.kind-buy { background: var(--income-soft); color: var(--income-ink); }
+.kind-sell { background: rgba(235, 104, 52, 0.14); color: #b0561b; }
+.kind-merge { background: var(--lend-soft); color: var(--lend-ink); }
+
+.rice-stock-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rice-stock-head h2 { margin: 0; }
+.rice-stock-head p { margin: 0; color: var(--muted); font-size: 0.85rem; }
+.rice-stock-head label { display: grid; gap: 4px; width: 180px; }
+.rice-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.rice-stats .stat-tile strong { font-size: clamp(1.15rem, 2vw, 1.5rem); }
+.stat-rice-buy { --tile-color: var(--income); }
+.stat-rice-sell { --tile-color: #eb6834; }
+.stat-rice-net { --tile-color: var(--accent); }
+.stat-rice-stock { --tile-color: var(--lend); }
+.stat-rice-owe { --tile-color: var(--expense); }
+.stat-rice-due { --tile-color: var(--borrow); }
+
+.rice-print { display: none; }
+
+@media (max-width: 1100px) {
+  .rice-grid, .rice-two { grid-template-columns: 1fr; }
+  .rice-receipt { position: static; }
+  .rice-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .rice-three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rice-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rice-filters { grid-template-columns: 1fr; }
+  .rice-nav .nav-btn { flex-direction: column; gap: 0; padding: 4px 2px; font-size: 0.72rem; }
+  .rice-nav .nav-btn span:first-child { font-size: 1rem; }
+  .staff-top-actions .primary-btn { padding: 8px 10px; }
+}
+
+/* ใบบิลสำหรับพิมพ์ */
+@media print {
+  body.print-rice::before, body.print-rice::after { display: none !important; }
+  body.print-rice > *:not(#ricePrint) { display: none !important; }
+  body.print-rice #ricePrint { display: block !important; }
+}
+@page { margin: 12mm; }
+.bill-doc { max-width: 720px; margin: 0 auto; color: #1f1a10; font-size: 13px; line-height: 1.5; }
+.bill-doc-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 3px double #b58a1b; }
+.bill-doc-head h1 { margin: 0; font-family: "Noto Serif Thai", serif; font-size: 22px; }
+.bill-doc-head p { margin: 0; }
+.bill-doc-title { text-align: right; }
+.bill-doc-title strong { display: block; font-size: 17px; }
+.bill-doc-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; margin: 12px 0; }
+.bill-doc table { width: 100%; border-collapse: collapse; }
+.bill-doc th, .bill-doc td { padding: 6px 8px; border: 1px solid #d8c48e; text-align: left; }
+.bill-doc td.num, .bill-doc th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bill-doc tr.bill-total td { font-size: 15px; font-weight: 900; background: #fff4cc; }
+.bill-doc-words { margin: 8px 0 0; font-weight: 700; }
+.bill-doc-sign { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 44px; text-align: center; }
+.bill-doc-sign div { padding-top: 6px; border-top: 1px dotted #555; }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1100px) {
@@ -1080,7 +1419,8 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
 }
 
 @media (max-width: 760px) {
-  .topbar { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  /* backdrop-filter ทำให้เมนูล่าง (position: fixed) ติดอยู่ในแถบหัว จึงปิดบนมือถือ */
+  .topbar { flex-wrap: wrap; gap: 8px; padding: 10px 12px; backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(255, 252, 238, 0.97); }
   .brand { flex: 1; }
   .brand small { display: none; }
   .main-nav {
@@ -1143,12 +1483,12 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
 <body>
   <section class="login-screen" id="loginScreen">
     <form class="login-card" id="loginForm">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">฿</div>
-        <div>
-          <strong>MoneyBook</strong>
-          <small>บัญชีรายรับรายจ่าย</small>
-        </div>
+      <div class="login-crest">
+        <div class="crest-emblem" aria-hidden="true">🌾</div>
+        <p class="crest-kicker">ระบบการจัดการ</p>
+        <h1 class="crest-title">ท่าข้าวแม่ดา</h1>
+        <p class="crest-sub">ส.รุ่งเรือง</p>
+        <div class="crest-divider" aria-hidden="true"><span>◆</span></div>
       </div>
       <label>
         <span>ชื่อผู้ใช้</span>
@@ -1159,16 +1499,17 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
         <input name="password" type="password" autocomplete="current-password" required />
       </label>
       <button class="primary-btn full" type="submit">เข้าสู่ระบบ</button>
-      <p class="login-help" id="loginHelp">ใช้ admin / admin1234 เพื่อเข้าสู่ระบบ</p>
+      <button class="secondary-btn full" id="guestStaffBtn" type="button">ไปหน้าพนักงาน (ไม่ต้องล็อกอิน)</button>
+      <p class="login-help" id="loginHelp"></p>
     </form>
   </section>
 
   <div class="app is-hidden" id="appShell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">฿</div>
+        <div class="brand-mark" aria-hidden="true">🌾</div>
         <div>
-          <strong>MoneyBook</strong>
+          <strong>ท่าข้าวแม่ดา ส.รุ่งเรือง</strong>
           <small id="modeKicker">บัญชีรายรับรายจ่าย</small>
         </div>
       </div>
@@ -1176,6 +1517,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
       <nav class="main-nav" aria-label="เมนูหลัก">
         <button class="nav-btn is-active" type="button" data-view="home"><span aria-hidden="true">⌂</span><span>หน้าแรก</span></button>
         <button class="nav-btn" type="button" data-view="details"><span aria-hidden="true">≡</span><span>รายละเอียด</span></button>
+        <button class="nav-btn" type="button" data-rice-open="manager"><span aria-hidden="true">🌾</span><span>ซื้อ-ขายข้าว</span></button>
       </nav>
 
       <div class="top-actions">
@@ -1809,13 +2151,14 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
   <div class="app staff-app is-hidden" id="staffShell">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">฿</div>
+        <div class="brand-mark" aria-hidden="true">🌾</div>
         <div>
-          <strong>MoneyBook</strong>
+          <strong>ท่าข้าวแม่ดา ส.รุ่งเรือง</strong>
           <small id="staffUserLabel">พนักงาน</small>
         </div>
       </div>
       <div class="top-actions staff-top-actions">
+        <button class="primary-btn" type="button" data-rice-open="staff">🌾 ซื้อ-ขายข้าว</button>
         <button class="icon-btn" id="staffLogoutBtn" type="button" title="ออกจากระบบ">⏻</button>
       </div>
     </header>
@@ -1880,6 +2223,254 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
       </section>
     </main>
   </div>
+
+  <!-- ================= ซื้อ-ขายข้าว: แยกจากบัญชีรายรับรายจ่าย (ใช้ได้ทั้งพนักงานและผู้บริหาร) ================= -->
+  <div class="app rice-app is-hidden" id="riceShell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">🌾</div>
+        <div>
+          <strong>ท่าข้าวแม่ดา ส.รุ่งเรือง</strong>
+          <small id="riceUserLabel">ศูนย์ซื้อ-ขายข้าว</small>
+        </div>
+      </div>
+      <nav class="main-nav rice-nav" aria-label="เมนูซื้อ-ขายข้าว">
+        <button class="nav-btn" type="button" data-rice-tab="bill"><span aria-hidden="true">🧾</span><span>บันทึกบิล</span></button>
+        <button class="nav-btn" type="button" data-rice-tab="merge"><span aria-hidden="true">⇶</span><span>รวมข้าว</span></button>
+        <button class="nav-btn" type="button" data-rice-tab="list"><span aria-hidden="true">≡</span><span>รายการบิล</span></button>
+        <button class="nav-btn" type="button" data-rice-tab="stock" id="riceStockTabBtn"><span aria-hidden="true">📊</span><span>สต็อก & สรุป</span></button>
+      </nav>
+      <div class="top-actions">
+        <button class="icon-btn" type="button" id="riceReloadBtn" title="โหลดข้อมูลใหม่">↻</button>
+        <button class="secondary-btn" type="button" id="riceBackBtn">← กลับ</button>
+      </div>
+    </header>
+
+    <main class="workspace rice-workspace">
+      <!-- บันทึกบิล -->
+      <section class="rice-panel" data-rice-panel="bill">
+        <div class="rice-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="kicker" id="riceBillKicker">บิลใหม่</p>
+                <h2>บิลรับซื้อ / ขายออกข้าว</h2>
+                <p>ชั่งรถเข้า-ออก หักความชื้นเกินมาตรฐานและสิ่งเจือปนให้อัตโนมัติ คิดราคาเป็นบาท/ตัน</p>
+              </div>
+            </div>
+            <form class="rice-form" id="riceBillForm" autocomplete="off">
+              <input name="id" type="hidden" />
+              <input name="paidDate" type="hidden" />
+              <div class="segmented seg-2 rice-kind" role="radiogroup" aria-label="ประเภทบิล">
+                <label><input type="radio" name="kind" value="buy" checked /><span>⬇ รับซื้อข้าว</span></label>
+                <label><input type="radio" name="kind" value="sell" /><span>⬆ ขายข้าวออก</span></label>
+              </div>
+
+              <fieldset>
+                <legend>ข้อมูลบิล</legend>
+                <div class="form-grid">
+                  <label><span>วันที่</span><input name="date" type="date" required /></label>
+                  <label><span>เลขที่บิล</span><input name="billNo" type="text" readonly placeholder="ออกให้อัตโนมัติเมื่อบันทึก" /></label>
+                  <label><span id="ricePartyLabel">ชื่อผู้ขาย (ชาวนา)</span><input name="party" type="text" list="ricePartyList" required /></label>
+                  <label><span>เบอร์โทร</span><input name="phone" type="tel" inputmode="tel" /></label>
+                  <label><span>ทะเบียนรถ</span><input name="plate" type="text" placeholder="เช่น 80-1234 นครสวรรค์" /></label>
+                  <label><span>ชนิดข้าว</span><input name="riceType" type="text" list="riceTypeList" required placeholder="เช่น ข้าวหอมมะลิ 105" /></label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>การชั่งน้ำหนัก (กิโลกรัม)</legend>
+                <div class="form-grid rice-three">
+                  <label><span>น้ำหนักรถเข้า</span><input name="grossKg" type="number" min="0" step="1" inputmode="numeric" required /></label>
+                  <label><span>น้ำหนักรถออก</span><input name="tareKg" type="number" min="0" step="1" inputmode="numeric" required /></label>
+                  <label><span>น้ำหนักข้าวสุทธิ</span><output class="rice-output" id="riceNetOut">0 กก.</output></label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>คุณภาพและราคา</legend>
+                <div class="form-grid rice-three">
+                  <label><span>ความชื้น (%)</span><input name="moisture" type="number" min="0" max="99" step="0.1" inputmode="decimal" placeholder="เช่น 25" /></label>
+                  <label><span>ความชื้นมาตรฐาน (%)</span><input name="moistureStd" type="number" min="0" max="99" step="0.1" inputmode="decimal" value="15" /></label>
+                  <label><span>สิ่งเจือปน (%)</span><input name="impurity" type="number" min="0" max="99" step="0.1" inputmode="decimal" placeholder="0" /></label>
+                  <label><span>ราคา (บาท/ตัน)</span><input name="pricePerTon" type="number" min="0" step="0.01" inputmode="decimal" required /></label>
+                  <label><span>หักอื่น ๆ (บาท)</span><input name="otherDeduct" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0" /></label>
+                  <label><span>รายการหัก</span><input name="otherNote" type="text" placeholder="เช่น ค่าชั่ง ค่าขน" /></label>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>การชำระเงิน</legend>
+                <div class="form-grid">
+                  <label class="check-row rice-paid-row"><input name="paid" type="checkbox" checked /><span id="ricePaidLabel">จ่ายเงินให้ชาวนาแล้ว</span></label>
+                  <label><span id="riceWalletLabel">จ่ายจากบัญชี</span><select name="walletId"></select></label>
+                  <label class="rice-span-2"><span>หมายเหตุ</span><input name="note" type="text" placeholder="เช่น ข้าวแห้ง คุณภาพดี" /></label>
+                </div>
+              </fieldset>
+
+              <div class="day-quick-actions">
+                <button class="secondary-btn" type="button" id="riceBillResetBtn">ล้างฟอร์ม</button>
+                <button class="secondary-btn" type="button" id="riceBillPrintBtn">บันทึกและพิมพ์บิล</button>
+                <button class="primary-btn" type="submit" id="riceBillSubmitBtn">บันทึกบิล</button>
+              </div>
+            </form>
+          </section>
+
+          <aside class="panel rice-receipt" id="riceCalc" aria-live="polite"></aside>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 id="riceDayTitle">บิลวันนี้</h2>
+              <p id="riceDayNote">0 บิล</p>
+            </div>
+          </div>
+          <div class="transaction-list" id="riceDayList"></div>
+        </section>
+      </section>
+
+      <!-- รวมข้าว -->
+      <section class="rice-panel" data-rice-panel="merge">
+        <div class="rice-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="kicker" id="riceMergeKicker">รายการใหม่</p>
+                <h2>รวมข้าว</h2>
+                <p>นำข้าวหลายชนิดหรือหลายกองมารวมเป็นกองเดียว สต็อกต้นทางลดลงและกองใหม่เพิ่มขึ้น ไม่กระทบยอดเงิน</p>
+              </div>
+            </div>
+            <form class="rice-form" id="riceMergeForm" autocomplete="off">
+              <input name="id" type="hidden" />
+              <div class="form-grid">
+                <label><span>วันที่</span><input name="date" type="date" required /></label>
+                <label><span>ชื่อกอง / ชนิดข้าวหลังรวม</span><input name="riceType" type="text" list="riceTypeList" required placeholder="เช่น ข้าวเจ้ารวม กอง A" /></label>
+              </div>
+              <fieldset>
+                <legend>ข้าวที่นำมารวม</legend>
+                <div class="rice-sources" id="riceSources"></div>
+                <button class="ghost-btn" type="button" id="riceAddSourceBtn">＋ เพิ่มข้าวที่นำมารวม</button>
+              </fieldset>
+              <div class="form-grid">
+                <label><span>น้ำหนักสูญเสีย / ปรับลด (กก.)</span><input name="lossKg" type="number" min="0" step="1" inputmode="numeric" placeholder="0" /></label>
+                <label><span>หมายเหตุ</span><input name="note" type="text" placeholder="เช่น รวมเพื่อขายโรงสี" /></label>
+              </div>
+              <div class="day-quick-actions">
+                <button class="secondary-btn" type="button" id="riceMergeResetBtn">ล้างฟอร์ม</button>
+                <button class="primary-btn" type="submit" id="riceMergeSubmitBtn">บันทึกการรวมข้าว</button>
+              </div>
+            </form>
+          </section>
+
+          <aside class="panel rice-receipt" id="riceMergeSummary"></aside>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>ประวัติการรวมข้าว</h2>
+              <p id="riceMergeNote">0 รายการ</p>
+            </div>
+          </div>
+          <div class="transaction-list" id="riceMergeList"></div>
+        </section>
+      </section>
+
+      <!-- รายการบิล -->
+      <section class="rice-panel" data-rice-panel="list">
+        <section class="panel">
+          <div class="filters rice-filters">
+            <label><span>ค้นหา</span><input id="riceSearch" type="search" placeholder="เลขที่บิล ชื่อ ทะเบียนรถ ชนิดข้าว" /></label>
+            <label><span>ช่วงเวลา</span>
+              <select id="riceRange"><option value="month">เดือนที่เลือก</option><option value="all">ทั้งหมด</option></select>
+            </label>
+            <label><span>เดือน</span><input id="riceMonth" type="month" /></label>
+            <label><span>ประเภท</span>
+              <select id="riceKindFilter"><option value="all">ทั้งหมด</option><option value="buy">รับซื้อ</option><option value="sell">ขายออก</option><option value="merge">รวมข้าว</option></select>
+            </label>
+            <label><span>สถานะเงิน</span>
+              <select id="riceStatusFilter"><option value="all">ทั้งหมด</option><option value="paid">ชำระแล้ว</option><option value="unpaid">ค้างชำระ</option></select>
+            </label>
+            <button class="secondary-btn" type="button" id="riceExportBtn">CSV</button>
+          </div>
+          <div class="list-summary" id="riceListSummary"></div>
+          <div class="table-wrap">
+            <table class="data-table rice-table">
+              <thead>
+                <tr>
+                  <th>วันที่ / เลขที่บิล</th>
+                  <th>ประเภท</th>
+                  <th>คู่ค้า</th>
+                  <th>ชนิดข้าว</th>
+                  <th class="num">น้ำหนักคิดเงิน</th>
+                  <th class="num">ราคา/ตัน</th>
+                  <th class="num">ยอดสุทธิ</th>
+                  <th>สถานะ</th>
+                  <th class="action-col"></th>
+                </tr>
+              </thead>
+              <tbody id="riceTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- สต็อก & สรุป (ผู้บริหาร) -->
+      <section class="rice-panel" data-rice-panel="stock">
+        <section class="panel rice-stock-head">
+          <div>
+            <h2>ภาพรวมซื้อ-ขายข้าว</h2>
+            <p id="riceSummaryLabel">เดือนที่เลือก</p>
+          </div>
+          <label><span>เดือน</span><input id="riceSummaryMonth" type="month" /></label>
+        </section>
+        <div class="rice-stats" id="riceStats"></div>
+        <div class="rice-two">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>สต็อกข้าวคงเหลือ</h2>
+                <p>รวมทุกชนิด = รับซื้อ + รวมเข้า − ขายออก − รวมออก (น้ำหนักคิดเงิน)</p>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table rice-mini-table">
+                <thead><tr><th>ชนิดข้าว</th><th class="num">รับซื้อ</th><th class="num">ขายออก</th><th class="num">รวมเข้า/ออก</th><th class="num">คงเหลือ</th></tr></thead>
+                <tbody id="riceStockTable"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>ค้างชำระ</h2>
+                <p id="riceUnpaidNote">บิลที่ยังไม่ได้รับ/จ่ายเงิน</p>
+              </div>
+            </div>
+            <div class="transaction-list" id="riceUnpaidList"></div>
+          </section>
+        </div>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>สรุปตามชนิดข้าว</h2>
+              <p id="riceTypeSummaryNote">เดือนที่เลือก</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>ชนิดข้าว</th><th class="num">ซื้อ (ตัน)</th><th class="num">ซื้อ (บาท)</th><th class="num">เฉลี่ยซื้อ/ตัน</th><th class="num">ขาย (ตัน)</th><th class="num">ขาย (บาท)</th><th class="num">เฉลี่ยขาย/ตัน</th></tr></thead>
+              <tbody id="riceTypeSummary"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+    <datalist id="riceTypeList"></datalist>
+    <datalist id="ricePartyList"></datalist>
+  </div>
+  <div class="rice-print" id="ricePrint"></div>
 
   <dialog class="transaction-dialog" id="transactionDialog">
     <form id="transactionForm" class="dialog-card">
@@ -2066,6 +2657,17 @@ const TABS = {
 };
 const MANAGER_ROLES = ["admin", "manager"];
 const STAFF_TYPES = ["income", "expense"];
+const GUEST_USERNAME = "guest"; // ต้องตรงกับ MM_GUEST_USER ใน Code.gs
+// ซื้อ-ขายข้าว: ต้องตรงกับ MM_RICE_CATEGORIES ใน Code.gs
+const RICE_CATEGORIES = [
+  { id: "cat_rice_buy", type: "expense", name: "ซื้อข้าว", icon: "🌾", color: "#fff0b3" },
+  { id: "cat_rice_sell", type: "income", name: "ขายข้าว", icon: "🚚", color: "#d3f3dc" }
+];
+const RICE_STORAGE_KEY = "moneybook.standalone.rice.v1";
+const RICE_KIND_LABELS = { buy: "รับซื้อ", sell: "ขายออก", merge: "รวมข้าว" };
+const RICE_KIND_META = { buy: { icon: "🌾", color: "#e3f6ee" }, sell: { icon: "🚚", color: "#fde6d8" }, merge: { icon: "⇶", color: "#ece9f8" } };
+const RICE_PREFIX = { buy: "B", sell: "S", merge: "M" };
+const RICE_TYPE_PRESETS = ["ข้าวหอมมะลิ 105", "ข้าวหอมมะลิ กข15", "ข้าวหอมปทุม", "ข้าวเจ้า (ข้าวขาว)", "ข้าวเหนียว กข6", "ข้าวเหนียวเขี้ยวงู", "ข้าวไรซ์เบอร์รี่", "ข้าวสังข์หยด"];
 const LEGACY_ROUTES = {
   dashboard: "home",
   income: "home",
@@ -2159,6 +2761,15 @@ let knownTxIds = new Set(); // ธุรกรรมที่ฝั่งผู�
 let staffData = null; // { date, today, wallets, categories, transactions } ของพนักงานที่ล็อกอินอยู่
 let usersCache = null;
 let editingUser = "";
+// หน้าซื้อ-ขายข้าว: data = ผลจาก apiRiceGet { records, stock, riceTypes, parties, wallets, canManage, today }
+const rice = {
+  data: null,
+  tab: "bill",
+  returnTo: "",
+  editingMerge: null,
+  summaryMonth: "",
+  filters: { search: "", range: "month", month: "", kind: "all", status: "all" }
+};
 const editing = { wallet: "", budget: "", category: "" };
 const dom = {};
 
@@ -2181,13 +2792,13 @@ document.addEventListener("DOMContentLoaded", () => {
     bootstrapStandalone();
   } else {
     if (isStandaloneMode()) ensureLocalUsers();
-    showLogin();
+    startGuestStaff();
   }
 });
 
 function cacheDom() {
   const ids = [
-    "loginScreen", "loginForm", "loginHelp", "appShell", "modeKicker", "monthSelect", "yearPicker",
+    "loginScreen", "loginForm", "loginHelp", "guestStaffBtn", "appShell", "modeKicker", "monthSelect", "yearPicker",
     "monthIncome", "incomeCount", "monthExpense", "expenseCount", "monthNet", "monthNetNote", "totalBalance", "walletCount",
     "homeDailyTitle", "homeDailyCanvas", "homeTrendCanvas",
     "calendarTitle", "calendarGrid", "selectedDayTitle", "selectedDaySummary", "dayTotals", "selectedDayList",
@@ -2209,6 +2820,13 @@ function cacheDom() {
     "dayDialog", "dayDialogTitle", "dayDialogSummary", "dayDialogTotals", "dayDialogList", "dayQuickForm", "dayMoreBtn", "closeDayDialogBtn",
     "staffShell", "staffUserLabel", "staffLogoutBtn", "staffDateLabel", "staffDateNote", "staffTodayBtn", "staffFormTitle", "staffForm",
     "staffCancelEditBtn", "staffSubmitBtn", "staffListNote", "staffList",
+    "riceShell", "riceUserLabel", "riceStockTabBtn", "riceReloadBtn", "riceBackBtn", "riceBillKicker", "riceBillForm", "ricePartyLabel",
+    "riceNetOut", "ricePaidLabel", "riceWalletLabel", "riceBillResetBtn", "riceBillPrintBtn", "riceBillSubmitBtn", "riceCalc",
+    "riceDayTitle", "riceDayNote", "riceDayList", "riceMergeKicker", "riceMergeForm", "riceSources", "riceAddSourceBtn",
+    "riceMergeResetBtn", "riceMergeSubmitBtn", "riceMergeSummary", "riceMergeNote", "riceMergeList",
+    "riceSearch", "riceRange", "riceMonth", "riceKindFilter", "riceStatusFilter", "riceExportBtn", "riceListSummary", "riceTable",
+    "riceSummaryLabel", "riceSummaryMonth", "riceStats", "riceStockTable", "riceUnpaidNote", "riceUnpaidList", "riceTypeSummaryNote",
+    "riceTypeSummary", "riceTypeList", "ricePartyList", "ricePrint",
     "userListNote", "userList", "reloadUsersBtn", "userFormTitle", "userForm", "userPasswordLabel", "userCancelBtn", "userSubmitBtn"
   ];
   ids.forEach((id) => { dom[id] = document.getElementById(id); });
@@ -2291,7 +2909,7 @@ function goToToday() {
 /* ---------- Events ---------- */
 
 function bindEvents() {
-  document.querySelectorAll(".nav-btn").forEach((button) => {
+  document.querySelectorAll(".nav-btn[data-view]").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
   });
   document.querySelectorAll(".tab-btn").forEach((button) => {
@@ -2424,7 +3042,8 @@ function bindEvents() {
   setupCategoryPicker(dom.staffForm.elements.categoryId, { getCategories: () => staffData?.categories || [], allowAdd: false });
 
   // หน้าพนักงาน
-  dom.staffLogoutBtn.addEventListener("click", logout);
+  dom.staffLogoutBtn.addEventListener("click", () => (isGuestStaff() ? showLogin() : logout()));
+  dom.guestStaffBtn.addEventListener("click", startGuestStaff);
   dom.staffForm.addEventListener("submit", submitStaffForm);
   dom.staffForm.querySelectorAll('input[name="type"]').forEach((radio) => radio.addEventListener("change", () => fillStaffOptions()));
   dom.staffCancelEditBtn.addEventListener("click", () => resetStaffForm());
@@ -2433,6 +3052,8 @@ function bindEvents() {
     button.addEventListener("click", () => loadStaffDay(shiftDateKey(staffData?.date || todayKey(), Number(button.dataset.staffDay))));
   });
   dom.staffList.addEventListener("click", handleStaffListClick);
+
+  bindRiceEvents();
 
   // จัดการผู้ใช้
   dom.userForm.addEventListener("submit", submitUserForm);
@@ -2519,11 +3140,11 @@ function isStandaloneMode() {
 function defaultLoginHelp() {
   return isGasMode()
     ? "โหมด Google Sheet: ครั้งแรกให้รัน setupSheet() ใน Apps Script แล้วเข้าด้วย admin / admin1234"
-    : "โหมด Standalone: ข้อมูลเก็บใน Browser นี้ เข้าด้วย admin / admin1234";
+    : "";
 }
 
 function updateModeText() {
-  dom.modeKicker.textContent = isGasMode() ? "บันทึกลง Google Sheet" : "บันทึกใน Browser นี้";
+  dom.modeKicker.textContent = isGasMode() ? "ระบบการจัดการท่าข้าว · Google Sheet" : "ระบบการจัดการท่าข้าว · Browser นี้";
 }
 
 function loadSession() {
@@ -2552,6 +3173,7 @@ function showLogin(message = "") {
   dom.loginForm.querySelector("button[type='submit']").disabled = false;
   dom.appShell.classList.add("is-hidden");
   dom.staffShell.classList.add("is-hidden");
+  dom.riceShell.classList.add("is-hidden");
   dom.loginScreen.classList.remove("is-hidden");
   dom.loginHelp.textContent = message || defaultLoginHelp();
 }
@@ -2560,6 +3182,7 @@ function showApp() {
   updateModeText();
   dom.loginScreen.classList.add("is-hidden");
   dom.staffShell.classList.add("is-hidden");
+  dom.riceShell.classList.add("is-hidden");
   dom.appShell.classList.remove("is-hidden");
 }
 
@@ -2630,6 +3253,23 @@ function loginStandalone(username, password) {
     saveState();
   }
   toast(`สวัสดี ${user.displayName || user.username}`);
+}
+
+// หน้าพนักงานเข้าได้โดยไม่ต้องล็อกอิน (ไม่มี token) รายการที่กรอกจะบันทึกผู้กรอกเป็น "guest"
+function isGuestStaff() {
+  return Boolean(auth?.user) && !auth.token;
+}
+
+function startGuestStaff() {
+  storeSession(null);
+  auth = { mode: isGasMode() ? "gas" : "standalone", token: "", user: { username: GUEST_USERNAME, displayName: "พนักงาน", role: "staff" } };
+  if (isGasMode()) showLogin("กำลังโหลดหน้าพนักงาน...");
+  callApi("apiStaffGetDay", todayKey())
+    .then((result) => startStaffApp(result))
+    .catch((error) => {
+      auth = null;
+      showLogin(error?.message || "โหลดหน้าพนักงานไม่สำเร็จ");
+    });
 }
 
 function bootstrapFromServer() {
@@ -2809,6 +3449,10 @@ function normalizeState(data) {
     icon: textValue(category.icon) || "•",
     color: colorValue(category.color, "#fdd5e3")
   }));
+  // หมวดเฉพาะของระบบซื้อ-ขายข้าว ต้องมีเสมอ (บิลที่ชำระแล้วลงบัญชีในหมวดนี้)
+  RICE_CATEGORIES.forEach((category) => {
+    if (!normalized.categories.some((item) => item.id === category.id)) normalized.categories.push({ ...category });
+  });
   normalized.budgets = normalized.budgets.map((budget) => ({
     id: budget.id || uid("budget"),
     name: textValue(budget.name) || "งบประมาณ",
@@ -2951,7 +3595,7 @@ function render() {
 function renderFrame() {
   const view = state.ui.view;
   const tab = state.ui.tab;
-  document.querySelectorAll(".nav-btn").forEach((button) => button.classList.toggle("is-active", button.dataset.view === view));
+  document.querySelectorAll(".nav-btn[data-view]").forEach((button) => button.classList.toggle("is-active", button.dataset.view === view));
   document.querySelectorAll("[data-view-panel]").forEach((panel) => panel.classList.toggle("is-active", panel.dataset.viewPanel === view));
   document.querySelectorAll(".tab-btn").forEach((button) => button.classList.toggle("is-active", button.dataset.tab === tab));
   document.querySelectorAll("[data-tab-panel]").forEach((panel) => panel.classList.toggle("is-active", panel.dataset.tabPanel === tab));
@@ -3345,9 +3989,9 @@ const localStaffApi = {
       date: isDateKey(date) ? date : today,
       today,
       wallets: book.wallets.map((wallet) => ({ id: wallet.id, name: wallet.name })),
-      categories: book.categories.filter((category) => STAFF_TYPES.includes(category.type)),
+      categories: book.categories.filter((category) => STAFF_TYPES.includes(category.type) && !isRiceCategory(category.id)),
       transactions: book.transactions
-        .filter((tx) => tx.date === date && sameUser(tx.createdBy, user.username) && STAFF_TYPES.includes(tx.type))
+        .filter((tx) => tx.date === date && sameUser(tx.createdBy, user.username) && STAFF_TYPES.includes(tx.type) && !isRiceCategory(tx.categoryId))
         .map((tx) => ({ ...tx, canEdit: localStaffCanEdit(tx) }))
     };
   },
@@ -3357,6 +4001,7 @@ const localStaffApi = {
     const amount = numberValue(input.amount);
     if (!STAFF_TYPES.includes(input.type)) throw new Error("บันทึกได้เฉพาะรายรับหรือรายจ่าย");
     if (!(amount > 0)) throw new Error("กรุณาระบุจำนวนเงินมากกว่า 0");
+    if (isRiceCategory(input.categoryId)) throw new Error("บันทึกซื้อ-ขายข้าวได้ที่หน้าซื้อ-ขายข้าวเท่านั้น");
     if (!book.wallets.some((wallet) => wallet.id === input.walletId)) throw new Error("ไม่พบบัญชีที่เลือก");
     if (!book.categories.some((category) => category.id === input.categoryId && category.type === input.type)) throw new Error("ไม่พบหมวดหมู่ที่เลือก");
     const now = new Date().toISOString();
@@ -3440,9 +4085,13 @@ function startStaffApp(data) {
   updateModeText();
   dom.loginScreen.classList.add("is-hidden");
   dom.appShell.classList.add("is-hidden");
+  dom.riceShell.classList.add("is-hidden");
   dom.staffShell.classList.remove("is-hidden");
   const user = auth?.user || {};
-  dom.staffUserLabel.textContent = `${user.displayName || user.username} · พนักงาน`;
+  const guest = isGuestStaff();
+  dom.staffUserLabel.textContent = guest ? "หน้าพนักงาน" : `${user.displayName || user.username} · พนักงาน`;
+  dom.staffLogoutBtn.textContent = guest ? "🔑" : "⏻";
+  dom.staffLogoutBtn.title = guest ? "เข้าสู่ระบบผู้บริหาร" : "ออกจากระบบ";
   resetStaffForm();
   renderStaff();
 }
@@ -3606,10 +4255,1019 @@ function submitStaffForm(event) {
     .finally(() => dom.staffShell.classList.remove("is-busy"));
 }
 
+/* ---------- ซื้อ-ขายข้าว (แยกจากบัญชี: ข้อมูลอยู่ชีต MM_Rice หรือ localStorage ของตัวเอง) ----------
+ * บิลที่ชำระแล้วสร้างธุรกรรมในหมวด "ซื้อข้าว/ขายข้าว" ให้อัตโนมัติ แก้/ลบธุรกรรมนั้นได้จากหน้านี้เท่านั้น
+ */
+
+function isRiceCategory(categoryId) {
+  return String(categoryId || "").startsWith("cat_rice_");
+}
+
+function redirectRiceTransaction(tx) {
+  if (!isRiceCategory(tx.categoryId)) return false;
+  toast("รายการนี้มาจากบิลซื้อ-ขายข้าว แก้ไข/ลบได้ที่หน้าซื้อ-ขายข้าว");
+  closeTransactionDialog();
+  rice.filters.search = String(tx.note || "").split(" · ")[0];
+  rice.filters.range = "all";
+  openRice("manager", "list");
+  return true;
+}
+
+function bindRiceEvents() {
+  document.querySelectorAll("[data-rice-open]").forEach((button) => {
+    button.addEventListener("click", () => openRice(button.dataset.riceOpen));
+  });
+  document.querySelectorAll("[data-rice-tab]").forEach((button) => {
+    button.addEventListener("click", () => setRiceTab(button.dataset.riceTab));
+  });
+  dom.riceBackBtn.addEventListener("click", closeRice);
+  dom.riceReloadBtn.addEventListener("click", loadRice);
+
+  dom.riceBillForm.addEventListener("input", updateRiceBillForm);
+  dom.riceBillForm.addEventListener("change", updateRiceBillForm);
+  dom.riceBillForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitRiceBill(false);
+  });
+  dom.riceBillPrintBtn.addEventListener("click", () => submitRiceBill(true));
+  dom.riceBillResetBtn.addEventListener("click", resetRiceBillForm);
+
+  dom.riceMergeForm.addEventListener("input", updateRiceMergeSummary);
+  dom.riceMergeForm.addEventListener("submit", submitRiceMerge);
+  dom.riceMergeResetBtn.addEventListener("click", resetRiceMergeForm);
+  dom.riceAddSourceBtn.addEventListener("click", () => {
+    renderMergeSourceRows([...readMergeSources(), { riceType: "", kg: "" }]);
+    const inputs = dom.riceSources.querySelectorAll("[data-source-type]");
+    inputs[inputs.length - 1]?.focus();
+  });
+  dom.riceSources.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-source-remove]");
+    if (!button) return;
+    const rows = readMergeSources();
+    rows.splice(Number(button.dataset.sourceRemove), 1);
+    renderMergeSourceRows(rows.length ? rows : [{ riceType: "", kg: "" }]);
+  });
+
+  dom.riceSearch.addEventListener("input", () => { rice.filters.search = dom.riceSearch.value; renderRiceList(); });
+  [dom.riceRange, dom.riceMonth, dom.riceKindFilter, dom.riceStatusFilter].forEach((input) => {
+    input.addEventListener("change", () => {
+      rice.filters.range = dom.riceRange.value;
+      rice.filters.month = dom.riceMonth.value || currentMonthKey();
+      rice.filters.kind = dom.riceKindFilter.value;
+      rice.filters.status = dom.riceStatusFilter.value;
+      renderRiceList();
+    });
+  });
+  dom.riceExportBtn.addEventListener("click", exportRiceCsv);
+  dom.riceSummaryMonth.addEventListener("change", () => {
+    rice.summaryMonth = dom.riceSummaryMonth.value || currentMonthKey();
+    renderRiceStock();
+  });
+
+  dom.riceShell.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-rice-action]");
+    if (!button) return;
+    const id = button.dataset.id;
+    const action = button.dataset.riceAction;
+    if (action === "print") printRiceBill(riceRecord(id));
+    if (action === "edit") editRiceRecord(id);
+    if (action === "delete") deleteRiceRecord(id);
+    if (action === "pay") toggleRicePaid(id);
+  });
+}
+
+function openRice(returnTo, tab = "bill") {
+  rice.returnTo = returnTo;
+  rice.tab = tab;
+  rice.data = null; // ผู้ใช้อาจเปลี่ยน (พนักงาน → ผู้บริหาร) ต้องโหลดใหม่ตามสิทธิ์ปัจจุบัน
+  if (!rice.summaryMonth) rice.summaryMonth = currentMonthKey();
+  if (!rice.filters.month) rice.filters.month = currentMonthKey();
+  dom.loginScreen.classList.add("is-hidden");
+  dom.appShell.classList.add("is-hidden");
+  dom.staffShell.classList.add("is-hidden");
+  dom.riceShell.classList.remove("is-hidden");
+  const user = auth?.user || {};
+  dom.riceUserLabel.textContent = `ศูนย์ซื้อ-ขายข้าว · ${isGuestStaff() ? "พนักงาน" : user.displayName || user.username || ""}`;
+  resetRiceBillForm();
+  resetRiceMergeForm();
+  renderRice();
+  loadRice();
+  window.scrollTo({ top: 0 });
+}
+
+function closeRice() {
+  dom.riceShell.classList.add("is-hidden");
+  if (rice.returnTo === "manager" && state && !isStaffUser()) {
+    showApp();
+    render();
+  } else if (staffData) {
+    startStaffApp(staffData);
+  } else {
+    startGuestStaff();
+  }
+}
+
+function setRiceTab(tab) {
+  rice.tab = tab;
+  renderRice();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function loadRice() {
+  dom.riceShell.classList.add("is-busy");
+  callApi("apiRiceGet")
+    .then(applyRiceResult)
+    .catch(handleRiceError)
+    .finally(() => dom.riceShell.classList.remove("is-busy"));
+}
+
+function applyRiceResult(result) {
+  rice.data = result;
+  patchManagerFromRice(result);
+  renderRice();
+}
+
+// ธุรกรรมของบิลถูกเขียนลงสมุดบัญชีฝั่งเซิร์ฟเวอร์แล้ว ปรับ state ของผู้บริหารให้ตรงกันโดยไม่ต้องบันทึกซ้ำ
+function patchManagerFromRice(result) {
+  if (!state || isStaffUser()) return;
+  if (result.removedTxId) {
+    state.transactions = state.transactions.filter((tx) => tx.id !== result.removedTxId);
+    knownTxIds.delete(result.removedTxId);
+  }
+  if (result.tx) {
+    const tx = normalizeTransaction(result.tx, state.wallets[0]?.id);
+    state.transactions = state.transactions.filter((item) => item.id !== tx.id).concat(tx);
+    knownTxIds.add(tx.id);
+  }
+}
+
+function handleRiceError(error) {
+  const message = error?.message || "ทำรายการไม่สำเร็จ";
+  if (/Session|ปิดการใช้งาน/.test(message)) {
+    storeSession(null);
+    showLogin(message);
+    return;
+  }
+  toast(message);
+}
+
+function riceRecords() {
+  return rice.data?.records || [];
+}
+
+function riceRecord(id) {
+  return riceRecords().find((record) => record.id === id);
+}
+
+/* ----- คำนวณ (สูตรเดียวกับ riceCompute_ ใน Code.gs) ----- */
+
+function calcRiceNumbers(input) {
+  const grossKg = numberValue(input.grossKg);
+  const tareKg = numberValue(input.tareKg);
+  const moisture = numberValue(input.moisture);
+  const moistureStd = input.moistureStd === "" || input.moistureStd == null ? 15 : numberValue(input.moistureStd);
+  const impurity = numberValue(input.impurity);
+  const pricePerTon = numberValue(input.pricePerTon);
+  const otherDeduct = Math.max(0, numberValue(input.otherDeduct));
+  const netKg = Math.max(0, grossKg - tareKg);
+  const moistureKg = moisture > moistureStd && moistureStd < 100 ? netKg * (moisture - moistureStd) / (100 - moistureStd) : 0;
+  const impurityKg = (netKg - moistureKg) * Math.max(0, impurity) / 100;
+  const payKg = Math.max(0, Math.round(netKg - moistureKg - impurityKg));
+  const subtotal = Math.round(payKg / 1000 * pricePerTon * 100) / 100;
+  return {
+    grossKg, tareKg, netKg, moisture, moistureStd, moistureKg: Math.round(moistureKg), impurity, impurityKg: Math.round(impurityKg),
+    payKg, pricePerTon, subtotal, otherDeduct, total: Math.max(0, Math.round((subtotal - otherDeduct) * 100) / 100)
+  };
+}
+
+function computeRice(input) {
+  const kind = String(input.kind || "");
+  if (!RICE_KIND_LABELS[kind]) throw new Error("ประเภทบิลไม่ถูกต้อง");
+  if (!isDateKey(input.date)) throw new Error("วันที่ไม่ถูกต้อง");
+  const record = { kind, date: input.date, note: textValue(input.note).slice(0, 500), riceType: textValue(input.riceType).slice(0, 80) };
+
+  if (kind === "merge") {
+    const sources = (input.sources || [])
+      .map((source) => ({ riceType: textValue(source.riceType).slice(0, 80), kg: Math.round(numberValue(source.kg)) }))
+      .filter((source) => source.riceType && source.kg > 0);
+    if (!sources.length) throw new Error("กรุณาระบุข้าวที่จะนำมารวมอย่างน้อย 1 รายการ");
+    if (!record.riceType) throw new Error("กรุณาระบุชื่อกอง/ชนิดข้าวหลังรวม");
+    const sum = sources.reduce((total, source) => total + source.kg, 0);
+    const lossKg = Math.max(0, Math.round(numberValue(input.lossKg)));
+    if (lossKg >= sum) throw new Error("น้ำหนักสูญเสียต้องน้อยกว่าน้ำหนักรวม");
+    return { ...record, sources, lossKg, netKg: sum, payKg: sum - lossKg, total: 0, paid: false, paidDate: "", walletId: "", party: textValue(input.party).slice(0, 120) };
+  }
+
+  const n = calcRiceNumbers(input);
+  record.party = textValue(input.party).slice(0, 120);
+  if (!record.party) throw new Error(kind === "buy" ? "กรุณาระบุชื่อผู้ขาย (ชาวนา)" : "กรุณาระบุชื่อผู้ซื้อ");
+  if (!record.riceType) throw new Error("กรุณาระบุชนิดข้าว");
+  if (!(n.grossKg > 0)) throw new Error("กรุณาระบุน้ำหนักรถเข้า");
+  if (n.tareKg < 0 || n.tareKg >= n.grossKg) throw new Error("น้ำหนักรถออกต้องน้อยกว่าน้ำหนักรถเข้า");
+  if (n.moisture < 0 || n.moisture >= 100 || n.moistureStd < 0 || n.moistureStd >= 100) throw new Error("ค่าความชื้นไม่ถูกต้อง");
+  if (n.impurity < 0 || n.impurity >= 100) throw new Error("ค่าสิ่งเจือปนไม่ถูกต้อง");
+  if (!(n.pricePerTon > 0)) throw new Error("กรุณาระบุราคาต่อตัน");
+  const paid = input.paid === true || input.paid === "true";
+  return {
+    ...record,
+    ...n,
+    phone: textValue(input.phone).slice(0, 40),
+    plate: textValue(input.plate).slice(0, 40),
+    otherNote: textValue(input.otherNote).slice(0, 120),
+    paid,
+    paidDate: paid ? (isDateKey(input.paidDate) ? input.paidDate : input.date) : "",
+    walletId: textValue(input.walletId)
+  };
+}
+
+function riceStock(records) {
+  const map = new Map();
+  const row = (type) => {
+    if (!map.has(type)) map.set(type, { riceType: type, buyKg: 0, sellKg: 0, mergeInKg: 0, mergeOutKg: 0, balanceKg: 0 });
+    return map.get(type);
+  };
+  records.forEach((record) => {
+    if (record.kind === "buy") row(record.riceType).buyKg += numberValue(record.payKg);
+    if (record.kind === "sell") row(record.riceType).sellKg += numberValue(record.payKg);
+    if (record.kind === "merge") {
+      (record.sources || []).forEach((source) => { row(source.riceType).mergeOutKg += numberValue(source.kg); });
+      row(record.riceType).mergeInKg += numberValue(record.payKg);
+    }
+  });
+  return Array.from(map.values())
+    .map((item) => ({ ...item, balanceKg: item.buyKg + item.mergeInKg - item.sellKg - item.mergeOutKg }))
+    .sort((a, b) => a.riceType.localeCompare(b.riceType, "th"));
+}
+
+function nextRiceBillNo(records, kind, date) {
+  const base = `${RICE_PREFIX[kind]}${String(Number(date.slice(0, 4)) + 543).slice(2)}${date.slice(5, 7)}${date.slice(8, 10)}-`;
+  const max = records.reduce((top, record) => (String(record.billNo).startsWith(base) ? Math.max(top, Number(String(record.billNo).slice(base.length)) || 0) : top), 0);
+  return `${base}${String(max + 1).padStart(3, "0")}`;
+}
+
+function riceCanEdit(record) {
+  if (!isStaffUser()) return true;
+  if (!sameUser(record.createdBy, currentUsername())) return false;
+  const created = new Date(record.createdAt);
+  return !Number.isNaN(created.getTime()) && toDateKey(created) === todayKey();
+}
+
+/* ----- โหมด Browser: ตรรกะเดียวกับ apiRice* ใน Code.gs ----- */
+
+function localRiceRecords() {
+  const list = readJsonStorage(RICE_STORAGE_KEY, []);
+  return Array.isArray(list) ? list : [];
+}
+
+function localRiceSnapshot() {
+  const all = localRiceRecords();
+  const book = normalizeState(loadState());
+  const types = new Set();
+  const parties = new Set();
+  all.forEach((record) => {
+    if (record.riceType) types.add(record.riceType);
+    (record.sources || []).forEach((source) => source.riceType && types.add(source.riceType));
+    if (record.party) parties.add(record.party);
+  });
+  return {
+    ok: true,
+    today: todayKey(),
+    canManage: !isStaffUser(),
+    records: all.filter((record) => !isStaffUser() || sameUser(record.createdBy, currentUsername())).map((record) => ({ ...record, canEdit: riceCanEdit(record) })),
+    stock: riceStock(all),
+    riceTypes: Array.from(types).sort(),
+    parties: Array.from(parties).sort(),
+    wallets: book.wallets.map((wallet) => ({ id: wallet.id, name: wallet.name }))
+  };
+}
+
+function syncLocalRiceTx(book, record, now) {
+  const index = record.txId ? book.transactions.findIndex((tx) => tx.id === record.txId) : -1;
+  if (record.kind === "merge" || !record.paid) {
+    const removedTxId = record.txId || "";
+    if (index >= 0) book.transactions.splice(index, 1);
+    record.txId = "";
+    return { tx: null, removedTxId };
+  }
+  const previous = index >= 0 ? book.transactions[index] : null;
+  const tx = normalizeTransaction({
+    id: previous?.id || uid("tx"),
+    type: record.kind === "buy" ? "expense" : "income",
+    date: record.paidDate || record.date,
+    amount: record.total,
+    walletId: record.walletId,
+    categoryId: record.kind === "buy" ? "cat_rice_buy" : "cat_rice_sell",
+    note: `${record.billNo} · ${record.riceType} ${record.payKg} กก. · ${record.party}`,
+    tags: ["ข้าว"],
+    createdAt: previous?.createdAt || now,
+    updatedAt: now,
+    createdBy: record.createdBy
+  }, record.walletId);
+  if (index >= 0) book.transactions[index] = tx;
+  else book.transactions.push(tx);
+  record.txId = tx.id;
+  return { tx, removedTxId: "" };
+}
+
+Object.assign(localStaffApi, {
+  apiRiceGet() {
+    return localRiceSnapshot();
+  },
+  apiRiceSave(input) {
+    const all = localRiceRecords();
+    const found = input.id ? all.find((record) => record.id === input.id) : null;
+    if (input.id && !found) throw new Error("ไม่พบบิลนี้ อาจถูกลบไปแล้ว");
+    if (found && !riceCanEdit(found)) throw new Error("แก้ไขได้เฉพาะบิลของตัวเองที่บันทึกในวันนี้เท่านั้น");
+    if (found && found.kind !== input.kind) throw new Error("เปลี่ยนประเภทบิลไม่ได้ กรุณาลบแล้วบันทึกใหม่");
+    const record = computeRice(input);
+    const book = normalizeState(loadState());
+    if (record.kind !== "merge" && record.paid && !book.wallets.some((wallet) => wallet.id === record.walletId)) throw new Error("กรุณาเลือกบัญชีรับ/จ่ายเงิน");
+    const now = new Date().toISOString();
+    Object.assign(record, {
+      id: found?.id || uid("rice"),
+      billNo: found?.billNo || nextRiceBillNo(all, record.kind, record.date),
+      txId: found?.txId || "",
+      createdAt: found?.createdAt || now,
+      createdBy: found?.createdBy || currentUsername(),
+      updatedAt: found ? now : ""
+    });
+    const link = syncLocalRiceTx(book, record, now);
+    writeJsonStorage(STORAGE_KEY, book);
+    writeJsonStorage(RICE_STORAGE_KEY, found ? all.map((item) => (item.id === record.id ? record : item)) : [...all, record]);
+    return { ...localRiceSnapshot(), saved: record, tx: link.tx, removedTxId: link.removedTxId };
+  },
+  apiRiceDelete(id) {
+    const all = localRiceRecords();
+    const found = all.find((record) => record.id === id);
+    if (!found) throw new Error("ไม่พบบิลนี้ อาจถูกลบไปแล้ว");
+    if (!riceCanEdit(found)) throw new Error("ลบได้เฉพาะบิลของตัวเองที่บันทึกในวันนี้เท่านั้น");
+    if (found.txId) {
+      const book = normalizeState(loadState());
+      book.transactions = book.transactions.filter((tx) => tx.id !== found.txId);
+      writeJsonStorage(STORAGE_KEY, book);
+    }
+    writeJsonStorage(RICE_STORAGE_KEY, all.filter((record) => record.id !== id));
+    return { ...localRiceSnapshot(), removedTxId: found.txId || "" };
+  }
+});
+
+/* ----- แสดงผล ----- */
+
+function kgText(value) {
+  return `${Math.round(numberValue(value)).toLocaleString("th-TH")} กก.`;
+}
+
+function tonText(value) {
+  return `${(numberValue(value) / 1000).toLocaleString("th-TH", { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ตัน`;
+}
+
+function riceWallets() {
+  return rice.data?.wallets || [];
+}
+
+function fillRiceWalletOptions(select, keep) {
+  const wallets = riceWallets();
+  select.innerHTML = wallets.length
+    ? wallets.map((wallet) => `<option value="${escapeAttr(wallet.id)}">${escapeHtml(wallet.name)}</option>`).join("")
+    : `<option value="">ยังไม่มีบัญชี (ให้ผู้บริหารเพิ่ม)</option>`;
+  if (keep && wallets.some((wallet) => wallet.id === keep)) select.value = keep;
+}
+
+function renderRice() {
+  const data = rice.data;
+  const canManage = data ? Boolean(data.canManage) : !isStaffUser();
+  if (!canManage && rice.tab === "stock") rice.tab = "bill";
+  dom.riceStockTabBtn.classList.toggle("is-hidden", !canManage);
+  document.querySelectorAll("[data-rice-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.riceTab === rice.tab));
+  document.querySelectorAll("[data-rice-panel]").forEach((panel) => panel.classList.toggle("is-active", panel.dataset.ricePanel === rice.tab));
+  const types = Array.from(new Set([...RICE_TYPE_PRESETS, ...(data?.riceTypes || [])]));
+  dom.riceTypeList.innerHTML = types.map((type) => `<option value="${escapeAttr(type)}"></option>`).join("");
+  dom.ricePartyList.innerHTML = (data?.parties || []).map((party) => `<option value="${escapeAttr(party)}"></option>`).join("");
+  fillRiceWalletOptions(dom.riceBillForm.elements.walletId, dom.riceBillForm.elements.walletId.value);
+  updateRiceBillForm();
+  renderRiceDay();
+  updateRiceMergeSummary();
+  renderRiceMergeList();
+  renderRiceList();
+  if (canManage) renderRiceStock();
+}
+
+function riceStatusBadge(record) {
+  if (record.kind === "merge") return `<span class="badge badge-paid">สต็อก</span>`;
+  if (record.paid) return `<span class="badge badge-paid">${record.kind === "buy" ? "จ่ายแล้ว" : "รับเงินแล้ว"}</span>`;
+  return `<span class="badge badge-overdue">${record.kind === "buy" ? "ค้างจ่าย" : "ค้างรับ"}</span>`;
+}
+
+function riceActionsHtml(record) {
+  const id = escapeAttr(record.id);
+  const buttons = [`<button class="mini-btn" type="button" data-rice-action="print" data-id="${id}" title="พิมพ์บิล">⎙</button>`];
+  if (record.canEdit) {
+    if (record.kind !== "merge") {
+      const label = record.paid ? "ยกเลิกสถานะชำระ" : record.kind === "buy" ? "บันทึกว่าจ่ายเงินแล้ว" : "บันทึกว่ารับเงินแล้ว";
+      buttons.push(`<button class="mini-btn ok" type="button" data-rice-action="pay" data-id="${id}" title="${label}">${record.paid ? "↺" : "฿"}</button>`);
+    }
+    buttons.push(`<button class="mini-btn" type="button" data-rice-action="edit" data-id="${id}" title="แก้ไข">✎</button>`);
+    buttons.push(`<button class="mini-btn danger" type="button" data-rice-action="delete" data-id="${id}" title="ลบ">×</button>`);
+  }
+  return `<div class="row-actions">${buttons.join("")}</div>`;
+}
+
+function riceItemHtml(record) {
+  const meta = RICE_KIND_META[record.kind] || RICE_KIND_META.buy;
+  const details = record.kind === "merge"
+    ? [`รวม ${(record.sources || []).map((source) => escapeHtml(source.riceType)).join(" + ")}`, kgText(record.payKg)]
+    : [escapeHtml(record.party), kgText(record.payKg), `${money(record.pricePerTon)}/ตัน`, escapeHtml(record.plate)];
+  if (!isStaffUser()) details.push(`<span class="by-user">โดย ${escapeHtml(userDisplayName(record.createdBy))}</span>`);
+  return `
+    <article class="transaction-item">
+      <div class="transaction-icon" style="--item-color:${meta.color}">${meta.icon}</div>
+      <div class="transaction-main">
+        <strong>${escapeHtml(record.billNo)} · ${escapeHtml(record.riceType)}</strong>
+        <small>${formatDate(record.date)} · ${details.filter(Boolean).join(" · ")}</small>
+      </div>
+      <div class="transaction-side">
+        <div class="transaction-amount ${record.kind === "sell" ? "income-text" : record.kind === "buy" ? "expense-text" : ""}">${record.kind === "merge" ? kgText(record.payKg) : money(record.total)}</div>
+        ${riceStatusBadge(record)}
+        ${riceActionsHtml(record)}
+      </div>
+    </article>
+  `;
+}
+
+function receiptLine(label, value, className = "") {
+  return `<div class="receipt-line ${className}"><span>${label}</span><b>${value}</b></div>`;
+}
+
+/* ----- บิลรับซื้อ / ขายออก ----- */
+
+function readRiceBillForm() {
+  const f = dom.riceBillForm.elements;
+  return {
+    id: f.id.value,
+    kind: f.kind.value || "buy",
+    date: f.date.value,
+    billNo: f.billNo.value,
+    party: f.party.value,
+    phone: f.phone.value,
+    plate: f.plate.value,
+    riceType: f.riceType.value,
+    grossKg: f.grossKg.value,
+    tareKg: f.tareKg.value,
+    moisture: f.moisture.value,
+    moistureStd: f.moistureStd.value,
+    impurity: f.impurity.value,
+    pricePerTon: f.pricePerTon.value,
+    otherDeduct: f.otherDeduct.value,
+    otherNote: f.otherNote.value,
+    walletId: f.walletId.value,
+    paid: f.paid.checked,
+    paidDate: f.paid.checked ? f.paidDate.value : "",
+    note: f.note.value
+  };
+}
+
+function updateRiceBillForm() {
+  const input = readRiceBillForm();
+  const buy = input.kind === "buy";
+  const f = dom.riceBillForm.elements;
+  dom.ricePartyLabel.textContent = buy ? "ชื่อผู้ขาย (ชาวนา)" : "ชื่อผู้ซื้อ (โรงสี / ลูกค้า)";
+  dom.ricePaidLabel.textContent = buy ? "จ่ายเงินให้ชาวนาแล้ว" : "ได้รับเงินจากผู้ซื้อแล้ว";
+  dom.riceWalletLabel.textContent = buy ? "จ่ายจากบัญชี" : "รับเข้าบัญชี";
+  f.walletId.disabled = !input.paid;
+
+  const n = calcRiceNumbers(input);
+  dom.riceNetOut.textContent = kgText(n.netKg);
+  const lines = [
+    receiptLine("ชนิดข้าว", escapeHtml(textValue(input.riceType) || "-")),
+    receiptLine(buy ? "ผู้ขาย" : "ผู้ซื้อ", escapeHtml(textValue(input.party) || "-")),
+    receiptLine("น้ำหนักรถเข้า", kgText(n.grossKg)),
+    receiptLine("น้ำหนักรถออก", `− ${kgText(n.tareKg)}`, "is-minus"),
+    receiptLine("น้ำหนักข้าวสุทธิ", kgText(n.netKg), "is-strong"),
+    receiptLine(`หักความชื้น ${n.moisture}% (เกณฑ์ ${n.moistureStd}%)`, `− ${kgText(n.moistureKg)}`, "is-minus"),
+    receiptLine(`หักสิ่งเจือปน ${n.impurity}%`, `− ${kgText(n.impurityKg)}`, "is-minus"),
+    receiptLine("น้ำหนักคิดเงิน", `${kgText(n.payKg)}`, "is-strong"),
+    receiptLine("", tonText(n.payKg)),
+    receiptLine("ราคาต่อตัน", money(n.pricePerTon)),
+    receiptLine("เป็นเงิน", money(n.subtotal), "is-strong")
+  ];
+  if (n.otherDeduct) lines.push(receiptLine(`หัก${escapeHtml(textValue(input.otherNote) || "อื่น ๆ")}`, `− ${money(n.otherDeduct)}`, "is-minus"));
+  dom.riceCalc.innerHTML = `
+    <div class="receipt-head">
+      <strong>${buy ? "ใบรับซื้อข้าว" : "ใบขายข้าว"}</strong>
+      <small>${escapeHtml(input.billNo || "เลขที่บิลออกให้เมื่อบันทึก")} · ${formatDate(input.date) || "-"}</small>
+    </div>
+    <div class="receipt-lines">${lines.join("")}</div>
+    <div class="receipt-total">
+      <span>${buy ? "ยอดจ่ายชาวนาสุทธิ" : "ยอดรับจากผู้ซื้อสุทธิ"}</span>
+      <strong>${money(n.total)}</strong>
+      <small>${bahtText(n.total)}</small>
+    </div>
+  `;
+}
+
+function resetRiceBillForm() {
+  const form = dom.riceBillForm;
+  const kind = form.elements.kind.value || "buy";
+  const wallet = form.elements.walletId.value;
+  form.reset();
+  form.elements.id.value = "";
+  form.elements.paidDate.value = "";
+  form.querySelectorAll('input[name="kind"]').forEach((radio) => { radio.disabled = false; });
+  form.querySelector(`input[name="kind"][value="${kind}"]`).checked = true;
+  form.elements.date.value = todayKey();
+  fillRiceWalletOptions(form.elements.walletId, wallet);
+  dom.riceBillKicker.textContent = "บิลใหม่";
+  dom.riceBillSubmitBtn.textContent = "บันทึกบิล";
+  updateRiceBillForm();
+}
+
+function fillRiceBillForm(record) {
+  const form = dom.riceBillForm;
+  const f = form.elements;
+  form.reset();
+  form.querySelectorAll('input[name="kind"]').forEach((radio) => {
+    radio.checked = radio.value === record.kind;
+    radio.disabled = radio.value !== record.kind;
+  });
+  ["id", "date", "billNo", "party", "phone", "plate", "riceType", "grossKg", "tareKg", "moisture", "moistureStd", "impurity", "pricePerTon", "otherNote", "note", "paidDate"]
+    .forEach((name) => { f[name].value = record[name] ?? ""; });
+  f.otherDeduct.value = record.otherDeduct || "";
+  f.paid.checked = Boolean(record.paid);
+  fillRiceWalletOptions(f.walletId, record.walletId);
+  dom.riceBillKicker.textContent = `แก้ไขบิล ${record.billNo}`;
+  dom.riceBillSubmitBtn.textContent = "บันทึกการแก้ไข";
+  updateRiceBillForm();
+}
+
+function submitRiceBill(print) {
+  const input = readRiceBillForm();
+  try {
+    computeRice(input);
+    if (input.paid && !input.walletId) throw new Error("กรุณาเลือกบัญชีรับ/จ่ายเงิน (ให้ผู้บริหารเพิ่มบัญชีก่อน)");
+  } catch (error) {
+    toast(error.message);
+    return;
+  }
+  saveRiceRecord(input, input.id ? "แก้ไขบิลแล้ว" : "บันทึกบิลแล้ว", (saved) => {
+    resetRiceBillForm();
+    if (print) printRiceBill(saved);
+  });
+}
+
+function saveRiceRecord(input, message, done) {
+  dom.riceShell.classList.add("is-busy");
+  callApi("apiRiceSave", input)
+    .then((result) => {
+      applyRiceResult(result);
+      toast(`${message} ${result.saved?.billNo || ""}`.trim());
+      if (done) done(result.saved);
+    })
+    .catch(handleRiceError)
+    .finally(() => dom.riceShell.classList.remove("is-busy"));
+}
+
+function editRiceRecord(id) {
+  const record = riceRecord(id);
+  if (!record) return;
+  if (!record.canEdit) {
+    toast("แก้ไขได้เฉพาะบิลของตัวเองที่บันทึกในวันนี้");
+    return;
+  }
+  if (record.kind === "merge") {
+    fillRiceMergeForm(record);
+    setRiceTab("merge");
+  } else {
+    fillRiceBillForm(record);
+    setRiceTab("bill");
+  }
+}
+
+function deleteRiceRecord(id) {
+  const record = riceRecord(id);
+  if (!record || !confirm(`ลบ${RICE_KIND_LABELS[record.kind]} ${record.billNo} หรือไม่?${record.txId ? "\nรายการเงินที่ลงบัญชีไว้จะถูกลบด้วย" : ""}`)) return;
+  dom.riceShell.classList.add("is-busy");
+  callApi("apiRiceDelete", id)
+    .then((result) => {
+      applyRiceResult(result);
+      if (dom.riceBillForm.elements.id.value === id) resetRiceBillForm();
+      if (dom.riceMergeForm.elements.id.value === id) resetRiceMergeForm();
+      toast(`ลบ ${record.billNo} แล้ว`);
+    })
+    .catch(handleRiceError)
+    .finally(() => dom.riceShell.classList.remove("is-busy"));
+}
+
+function toggleRicePaid(id) {
+  const record = riceRecord(id);
+  if (!record || record.kind === "merge") return;
+  const paying = !record.paid;
+  const walletId = record.walletId || riceWallets()[0]?.id || "";
+  if (paying && !walletId) {
+    toast("ยังไม่มีบัญชีเงิน กรุณาให้ผู้บริหารเพิ่มบัญชีก่อน");
+    return;
+  }
+  const question = paying
+    ? `${record.kind === "buy" ? "บันทึกว่าจ่ายเงิน" : "บันทึกว่ารับเงิน"} ${money(record.total)} ของ ${record.billNo} วันนี้หรือไม่?`
+    : `ยกเลิกสถานะชำระของ ${record.billNo} หรือไม่? รายการเงินที่ลงบัญชีไว้จะถูกลบ`;
+  if (!confirm(question)) return;
+  saveRiceRecord({ ...record, walletId, paid: paying, paidDate: paying ? todayKey() : "" }, paying ? "บันทึกการชำระเงินแล้ว" : "ยกเลิกสถานะชำระแล้ว");
+}
+
+function renderRiceDay() {
+  const today = rice.data?.today || todayKey();
+  const items = riceRecords()
+    .filter((record) => record.date === today)
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const buyKg = items.filter((record) => record.kind === "buy").reduce((sum, record) => sum + numberValue(record.payKg), 0);
+  const sellKg = items.filter((record) => record.kind === "sell").reduce((sum, record) => sum + numberValue(record.payKg), 0);
+  dom.riceDayTitle.textContent = `บิลวันนี้ · ${dayName(today)} ${formatDate(today)}`;
+  dom.riceDayNote.textContent = `${items.length} รายการ · รับซื้อ ${tonText(buyKg)} · ขายออก ${tonText(sellKg)}${isStaffUser() ? " · แก้ไข/ลบได้เฉพาะบิลที่บันทึกวันนี้" : ""}`;
+  dom.riceDayList.innerHTML = items.length ? items.map(riceItemHtml).join("") : `<div class="empty-state">ยังไม่มีบิลวันนี้</div>`;
+}
+
+/* ----- รวมข้าว ----- */
+
+function renderMergeSourceRows(sources) {
+  dom.riceSources.innerHTML = sources.map((source, index) => `
+    <div class="rice-source-row" data-source-row>
+      <label><span>ชนิดข้าว / กอง</span><input type="text" list="riceTypeList" data-source-type value="${escapeAttr(source.riceType)}" placeholder="เลือกหรือพิมพ์ชื่อ" /></label>
+      <label><span>น้ำหนัก (กก.)</span><input type="number" min="0" step="1" inputmode="numeric" data-source-kg value="${escapeAttr(source.kg)}" /></label>
+      <button class="mini-btn danger" type="button" data-source-remove="${index}" title="ลบแถวนี้">×</button>
+      <small data-source-hint></small>
+    </div>
+  `).join("");
+  updateRiceMergeSummary();
+}
+
+function readMergeSources() {
+  return Array.from(dom.riceSources.querySelectorAll("[data-source-row]")).map((row) => ({
+    riceType: textValue(row.querySelector("[data-source-type]").value),
+    kg: row.querySelector("[data-source-kg]").value
+  }));
+}
+
+function readRiceMergeForm() {
+  const f = dom.riceMergeForm.elements;
+  return { id: f.id.value, kind: "merge", date: f.date.value, riceType: f.riceType.value, lossKg: f.lossKg.value, note: f.note.value, sources: readMergeSources() };
+}
+
+// สต็อกที่ใช้ได้ของชนิดนั้น (ถ้ากำลังแก้ไข ให้คืนยอดของรายการเดิมกลับก่อน)
+function riceAvailableKg(type) {
+  const row = (rice.data?.stock || []).find((item) => item.riceType === type);
+  let available = row ? row.balanceKg : 0;
+  const original = rice.editingMerge;
+  if (original) {
+    (original.sources || []).forEach((source) => { if (source.riceType === type) available += numberValue(source.kg); });
+    if (original.riceType === type) available -= numberValue(original.payKg);
+  }
+  return available;
+}
+
+function updateRiceMergeSummary() {
+  const input = readRiceMergeForm();
+  let warn = false;
+  dom.riceSources.querySelectorAll("[data-source-row]").forEach((row) => {
+    const type = textValue(row.querySelector("[data-source-type]").value);
+    const kg = numberValue(row.querySelector("[data-source-kg]").value);
+    const hint = row.querySelector("[data-source-hint]");
+    if (!type) {
+      hint.textContent = "";
+      return;
+    }
+    const available = riceAvailableKg(type);
+    const short = kg > available;
+    warn = warn || short;
+    hint.textContent = `สต็อกคงเหลือ ${kgText(available)}${short ? " — ไม่พอ" : ""}`;
+    hint.classList.toggle("is-warn", short);
+  });
+  const sources = input.sources.filter((source) => source.riceType && numberValue(source.kg) > 0);
+  const sum = sources.reduce((total, source) => total + Math.round(numberValue(source.kg)), 0);
+  const loss = Math.max(0, Math.round(numberValue(input.lossKg)));
+  const stockRows = (rice.data?.stock || []).filter((item) => item.balanceKg);
+  dom.riceMergeSummary.innerHTML = `
+    <div class="receipt-head">
+      <strong>ใบรวมข้าว</strong>
+      <small>${formatDate(input.date) || "-"}</small>
+    </div>
+    <div class="receipt-lines">
+      ${sources.length ? sources.map((source) => receiptLine(escapeHtml(source.riceType), kgText(source.kg))).join("") : receiptLine("ยังไม่ได้เลือกข้าว", "-")}
+      ${receiptLine("รวมน้ำหนักต้นทาง", kgText(sum), "is-strong")}
+      ${receiptLine("หักสูญเสีย / ปรับลด", `− ${kgText(loss)}`, "is-minus")}
+    </div>
+    <div class="receipt-total">
+      <span>ได้กอง ${escapeHtml(textValue(input.riceType) || "ใหม่")}</span>
+      <strong>${kgText(Math.max(0, sum - loss))}</strong>
+      <small>${tonText(Math.max(0, sum - loss))}${warn ? " · มีรายการที่สต็อกไม่พอ" : ""}</small>
+    </div>
+    <div class="receipt-lines">
+      <div class="receipt-line is-strong"><span>สต็อกคงเหลือตอนนี้</span><b></b></div>
+      ${stockRows.length ? stockRows.map((item) => receiptLine(escapeHtml(item.riceType), kgText(item.balanceKg))).join("") : receiptLine("ยังไม่มีสต็อก", "-")}
+    </div>
+  `;
+}
+
+function resetRiceMergeForm() {
+  const form = dom.riceMergeForm;
+  form.reset();
+  form.elements.id.value = "";
+  form.elements.date.value = todayKey();
+  rice.editingMerge = null;
+  dom.riceMergeKicker.textContent = "รายการใหม่";
+  dom.riceMergeSubmitBtn.textContent = "บันทึกการรวมข้าว";
+  renderMergeSourceRows([{ riceType: "", kg: "" }, { riceType: "", kg: "" }]);
+}
+
+function fillRiceMergeForm(record) {
+  const f = dom.riceMergeForm.elements;
+  dom.riceMergeForm.reset();
+  rice.editingMerge = record;
+  f.id.value = record.id;
+  f.date.value = record.date;
+  f.riceType.value = record.riceType;
+  f.lossKg.value = record.lossKg || "";
+  f.note.value = record.note || "";
+  dom.riceMergeKicker.textContent = `แก้ไข ${record.billNo}`;
+  dom.riceMergeSubmitBtn.textContent = "บันทึกการแก้ไข";
+  renderMergeSourceRows((record.sources || []).map((source) => ({ riceType: source.riceType, kg: source.kg })));
+}
+
+function submitRiceMerge(event) {
+  event.preventDefault();
+  const input = readRiceMergeForm();
+  let record;
+  try {
+    record = computeRice(input);
+  } catch (error) {
+    toast(error.message);
+    return;
+  }
+  const short = record.sources.filter((source) => source.kg > riceAvailableKg(source.riceType));
+  if (short.length && !confirm(`สต็อกไม่พอ: ${short.map((source) => source.riceType).join(", ")}\nต้องการบันทึกต่อหรือไม่?`)) return;
+  saveRiceRecord(input, input.id ? "แก้ไขการรวมข้าวแล้ว" : "บันทึกการรวมข้าวแล้ว", () => resetRiceMergeForm());
+}
+
+function renderRiceMergeList() {
+  const items = riceRecords()
+    .filter((record) => record.kind === "merge")
+    .sort((a, b) => `${b.date}${b.createdAt}`.localeCompare(`${a.date}${a.createdAt}`));
+  dom.riceMergeNote.textContent = `${items.length} รายการ`;
+  dom.riceMergeList.innerHTML = items.length ? items.slice(0, 50).map(riceItemHtml).join("") : `<div class="empty-state">ยังไม่มีการรวมข้าว</div>`;
+}
+
+/* ----- รายการบิล ----- */
+
+function filteredRiceRecords() {
+  const f = rice.filters;
+  const query = textValue(f.search).toLowerCase();
+  return riceRecords()
+    .filter((record) => f.range === "all" || monthKey(record.date) === f.month)
+    .filter((record) => f.kind === "all" || record.kind === f.kind)
+    .filter((record) => f.status === "all" || (record.kind !== "merge" && (f.status === "paid") === Boolean(record.paid)))
+    .filter((record) => !query || [record.billNo, record.party, record.plate, record.phone, record.riceType, record.note]
+      .some((value) => String(value || "").toLowerCase().includes(query)))
+    .sort((a, b) => `${b.date}${b.createdAt}`.localeCompare(`${a.date}${a.createdAt}`));
+}
+
+function renderRiceList() {
+  dom.riceSearch.value = rice.filters.search;
+  dom.riceRange.value = rice.filters.range;
+  dom.riceMonth.value = rice.filters.month;
+  dom.riceMonth.disabled = rice.filters.range === "all";
+  dom.riceKindFilter.value = rice.filters.kind;
+  dom.riceStatusFilter.value = rice.filters.status;
+  const items = filteredRiceRecords();
+  const total = (kind) => items.filter((record) => record.kind === kind).reduce((acc, record) => ({ kg: acc.kg + numberValue(record.payKg), amount: acc.amount + numberValue(record.total) }), { kg: 0, amount: 0 });
+  const buy = total("buy");
+  const sell = total("sell");
+  dom.riceListSummary.innerHTML = [
+    `<span><b>${items.length}</b> รายการ</span>`,
+    `<span>รับซื้อ <b>${tonText(buy.kg)}</b> · <b>${money(buy.amount)}</b></span>`,
+    `<span>ขายออก <b>${tonText(sell.kg)}</b> · <b>${money(sell.amount)}</b></span>`
+  ].join("");
+  dom.riceTable.innerHTML = items.length
+    ? items.map((record) => {
+        const merge = record.kind === "merge";
+        return `
+          <tr>
+            <td><b>${formatDate(record.date)}</b><small>${escapeHtml(record.billNo)}</small></td>
+            <td><span class="kind-badge kind-${record.kind}">${RICE_KIND_LABELS[record.kind]}</span></td>
+            <td>${escapeHtml(record.party || "-")}<small>${escapeHtml([record.plate, record.phone].filter(Boolean).join(" · "))}</small></td>
+            <td>${escapeHtml(record.riceType)}<small>${merge
+              ? `จาก ${(record.sources || []).map((source) => escapeHtml(source.riceType)).join(" + ")}`
+              : `ความชื้น ${numberValue(record.moisture)}% · สุทธิ ${kgText(record.netKg)}`}</small></td>
+            <td class="num">${kgText(record.payKg)}<small>${tonText(record.payKg)}</small></td>
+            <td class="num">${merge ? "-" : money(record.pricePerTon)}</td>
+            <td class="num"><b>${merge ? "-" : money(record.total)}</b></td>
+            <td>${riceStatusBadge(record)}</td>
+            <td>${riceActionsHtml(record)}</td>
+          </tr>
+        `;
+      }).join("")
+    : `<tr><td colspan="9"><div class="empty-state">ไม่พบบิลตามเงื่อนไข</div></td></tr>`;
+}
+
+function exportRiceCsv() {
+  const items = filteredRiceRecords();
+  const headers = ["วันที่", "เลขที่บิล", "ประเภท", "คู่ค้า", "โทร", "ทะเบียนรถ", "ชนิดข้าว", "น้ำหนักรถเข้า", "น้ำหนักรถออก", "น้ำหนักสุทธิ",
+    "ความชื้น%", "หักความชื้น(กก.)", "สิ่งเจือปน%", "หักสิ่งเจือปน(กก.)", "น้ำหนักคิดเงิน(กก.)", "ราคา/ตัน", "เป็นเงิน", "หักอื่นๆ", "ยอดสุทธิ", "สถานะ", "ผู้บันทึก", "หมายเหตุ"];
+  const rows = items.map((record) => [
+    record.date, record.billNo, RICE_KIND_LABELS[record.kind], record.party, record.phone, record.plate,
+    record.kind === "merge" ? `${record.riceType} (จาก ${(record.sources || []).map((source) => `${source.riceType} ${source.kg}`).join(" + ")})` : record.riceType,
+    record.grossKg ?? "", record.tareKg ?? "", record.netKg ?? "", record.moisture ?? "", record.moistureKg ?? "", record.impurity ?? "", record.impurityKg ?? "",
+    record.payKg, record.pricePerTon ?? "", record.subtotal ?? "", record.otherDeduct ?? "", record.total,
+    record.kind === "merge" ? "" : record.paid ? "ชำระแล้ว" : "ค้างชำระ", userDisplayName(record.createdBy), record.note
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+  downloadBlob(`﻿${csv}`, `rice-bills-${rice.filters.range === "all" ? "all" : rice.filters.month}.csv`, "text/csv;charset=utf-8");
+}
+
+/* ----- สต็อก & สรุป (ผู้บริหาร) ----- */
+
+function renderRiceStock() {
+  const month = rice.summaryMonth || currentMonthKey();
+  dom.riceSummaryMonth.value = month;
+  dom.riceSummaryLabel.textContent = `เดือน${monthLabel(month)}`;
+  const records = riceRecords();
+  const monthRecords = records.filter((record) => monthKey(record.date) === month);
+  const aggregate = (list) => {
+    const kg = list.reduce((sum, record) => sum + numberValue(record.payKg), 0);
+    const amount = list.reduce((sum, record) => sum + numberValue(record.total), 0);
+    return { count: list.length, kg, amount, avg: kg ? amount / (kg / 1000) : 0 };
+  };
+  const buy = aggregate(monthRecords.filter((record) => record.kind === "buy"));
+  const sell = aggregate(monthRecords.filter((record) => record.kind === "sell"));
+  const stock = rice.data?.stock || [];
+  const stockKg = stock.reduce((sum, item) => sum + item.balanceKg, 0);
+  const owe = records.filter((record) => record.kind === "buy" && !record.paid);
+  const due = records.filter((record) => record.kind === "sell" && !record.paid);
+  const sumTotal = (list) => list.reduce((sum, record) => sum + numberValue(record.total), 0);
+  const tile = (className, label, value, note) => `<article class="stat-tile ${className}"><span>${label}</span><strong>${value}</strong><small>${note}</small></article>`;
+  dom.riceStats.innerHTML = [
+    tile("stat-rice-buy", "รับซื้อเดือนนี้", money(buy.amount), `${tonText(buy.kg)} · ${buy.count} บิล · เฉลี่ย ${money(buy.avg)}/ตัน`),
+    tile("stat-rice-sell", "ขายออกเดือนนี้", money(sell.amount), `${tonText(sell.kg)} · ${sell.count} บิล · เฉลี่ย ${money(sell.avg)}/ตัน`),
+    tile("stat-rice-net", "ส่วนต่างขาย − ซื้อ", signedMoney(sell.amount - buy.amount), sell.avg && buy.avg ? `ส่วนต่างราคาเฉลี่ย ${signedMoney(sell.avg - buy.avg)}/ตัน` : "ยอดขายหักยอดซื้อของเดือนนี้"),
+    tile("stat-rice-stock", "สต็อกข้าวคงเหลือ", tonText(stockKg), `${stock.filter((item) => item.balanceKg > 0).length} ชนิด/กอง · ${kgText(stockKg)}`),
+    tile("stat-rice-owe", "ค้างจ่ายชาวนา", money(sumTotal(owe)), `${owe.length} บิล (ทุกเดือน)`),
+    tile("stat-rice-due", "ค้างรับจากผู้ซื้อ", money(sumTotal(due)), `${due.length} บิล (ทุกเดือน)`)
+  ].join("");
+
+  const stockTotal = stock.reduce((acc, item) => ({
+    buyKg: acc.buyKg + item.buyKg, sellKg: acc.sellKg + item.sellKg, mergeInKg: acc.mergeInKg + item.mergeInKg, mergeOutKg: acc.mergeOutKg + item.mergeOutKg
+  }), { buyKg: 0, sellKg: 0, mergeInKg: 0, mergeOutKg: 0 });
+  dom.riceStockTable.innerHTML = stock.length
+    ? stock.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.riceType)}</td>
+          <td class="num">${kgText(item.buyKg)}</td>
+          <td class="num">${kgText(item.sellKg)}</td>
+          <td class="num">+${kgText(item.mergeInKg)} / −${kgText(item.mergeOutKg)}</td>
+          <td class="num"><b class="${item.balanceKg < 0 ? "expense-text" : ""}">${kgText(item.balanceKg)}</b><small>${tonText(item.balanceKg)}</small></td>
+        </tr>
+      `).join("") + `
+        <tr class="rice-total-row">
+          <td>รวมทุกชนิด</td>
+          <td class="num">${kgText(stockTotal.buyKg)}</td>
+          <td class="num">${kgText(stockTotal.sellKg)}</td>
+          <td class="num">+${kgText(stockTotal.mergeInKg)} / −${kgText(stockTotal.mergeOutKg)}</td>
+          <td class="num">${kgText(stockKg)}<small>${tonText(stockKg)}</small></td>
+        </tr>`
+    : `<tr><td colspan="5"><div class="empty-state">ยังไม่มีสต็อก</div></td></tr>`;
+
+  const unpaid = [...owe, ...due].sort((a, b) => a.date.localeCompare(b.date));
+  dom.riceUnpaidNote.textContent = unpaid.length ? `ค้างจ่าย ${money(sumTotal(owe))} · ค้างรับ ${money(sumTotal(due))}` : "ไม่มีบิลค้างชำระ";
+  dom.riceUnpaidList.innerHTML = unpaid.length ? unpaid.map(riceItemHtml).join("") : `<div class="empty-state">ชำระครบทุกบิลแล้ว</div>`;
+
+  const byType = new Map();
+  monthRecords.filter((record) => record.kind !== "merge").forEach((record) => {
+    if (!byType.has(record.riceType)) byType.set(record.riceType, { buy: [], sell: [] });
+    byType.get(record.riceType)[record.kind].push(record);
+  });
+  dom.riceTypeSummaryNote.textContent = `เดือน${monthLabel(month)} · ${byType.size} ชนิด`;
+  dom.riceTypeSummary.innerHTML = byType.size
+    ? Array.from(byType.entries()).sort((a, b) => a[0].localeCompare(b[0], "th")).map(([type, group]) => {
+        const b = aggregate(group.buy);
+        const s = aggregate(group.sell);
+        return `
+          <tr>
+            <td>${escapeHtml(type)}</td>
+            <td class="num">${tonText(b.kg)}</td>
+            <td class="num">${money(b.amount)}</td>
+            <td class="num">${b.kg ? money(b.avg) : "-"}</td>
+            <td class="num">${tonText(s.kg)}</td>
+            <td class="num">${money(s.amount)}</td>
+            <td class="num">${s.kg ? money(s.avg) : "-"}</td>
+          </tr>
+        `;
+      }).join("")
+    : `<tr><td colspan="7"><div class="empty-state">ยังไม่มีการซื้อขายในเดือนนี้</div></td></tr>`;
+}
+
+/* ----- พิมพ์บิล ----- */
+
+function printRiceBill(record) {
+  if (!record) return;
+  const merge = record.kind === "merge";
+  const buy = record.kind === "buy";
+  const title = merge ? "ใบบันทึกการรวมข้าว" : buy ? "ใบรับซื้อข้าว" : "ใบขายข้าว / ใบส่งของ";
+  const rows = merge
+    ? [
+        ...(record.sources || []).map((source) => [`ข้าวที่นำมารวม: ${escapeHtml(source.riceType)}`, kgText(source.kg)]),
+        ["รวมน้ำหนักต้นทาง", kgText(record.netKg)],
+        ["หักสูญเสีย / ปรับลด", `− ${kgText(record.lossKg)}`],
+        [`ได้กอง ${escapeHtml(record.riceType)}`, `${kgText(record.payKg)} (${tonText(record.payKg)})`]
+      ]
+    : [
+        ["น้ำหนักรถเข้า", kgText(record.grossKg)],
+        ["น้ำหนักรถออก", `− ${kgText(record.tareKg)}`],
+        ["น้ำหนักข้าวสุทธิ", kgText(record.netKg)],
+        [`หักความชื้น ${numberValue(record.moisture)}% (เกณฑ์ ${numberValue(record.moistureStd)}%)`, `− ${kgText(record.moistureKg)}`],
+        [`หักสิ่งเจือปน ${numberValue(record.impurity)}%`, `− ${kgText(record.impurityKg)}`],
+        ["น้ำหนักคิดเงิน", `${kgText(record.payKg)} (${tonText(record.payKg)})`],
+        ["ราคาต่อตัน", money(record.pricePerTon)],
+        ["เป็นเงิน", money(record.subtotal)],
+        ...(numberValue(record.otherDeduct) ? [[`หัก${escapeHtml(record.otherNote || "อื่น ๆ")}`, `− ${money(record.otherDeduct)}`]] : [])
+      ];
+  const status = record.paid
+    ? `${buy ? "จ่ายเงินแล้ว" : "รับเงินแล้ว"}${record.paidDate ? ` (${formatDate(record.paidDate)})` : ""}`
+    : "ค้างชำระ";
+  const signs = merge ? ["ผู้ดำเนินการ", "ผู้ตรวจสอบ", "ผู้อนุมัติ"] : buy ? ["ผู้ชั่ง / ผู้บันทึก", "ผู้ขาย (ผู้รับเงิน)", "ผู้จ่ายเงิน"] : ["ผู้ชั่ง / ผู้บันทึก", "ผู้ซื้อ (ผู้รับของ)", "ผู้รับเงิน"];
+  dom.ricePrint.innerHTML = `
+    <div class="bill-doc">
+      <div class="bill-doc-head">
+        <div>
+          <h1>ท่าข้าวแม่ดา ส.รุ่งเรือง</h1>
+          <p>ระบบการจัดการท่าข้าว</p>
+        </div>
+        <div class="bill-doc-title">
+          <strong>${title}</strong>
+          <p>เลขที่ ${escapeHtml(record.billNo)}</p>
+          <p>วันที่ ${formatDate(record.date)}</p>
+        </div>
+      </div>
+      <div class="bill-doc-meta">
+        ${merge ? "" : `<div>${buy ? "ผู้ขาย" : "ผู้ซื้อ"}: <b>${escapeHtml(record.party)}</b></div><div>โทร: ${escapeHtml(record.phone || "-")}</div><div>ทะเบียนรถ: ${escapeHtml(record.plate || "-")}</div>`}
+        <div>ชนิดข้าว: <b>${escapeHtml(record.riceType)}</b></div>
+        ${merge ? "" : `<div>สถานะ: <b>${status}</b></div>`}
+        <div>ผู้บันทึก: ${escapeHtml(userDisplayName(record.createdBy) || "-")}</div>
+      </div>
+      <table>
+        <thead><tr><th>รายการ</th><th class="num">จำนวน</th></tr></thead>
+        <tbody>
+          ${rows.map(([label, value]) => `<tr><td>${label}</td><td class="num">${value}</td></tr>`).join("")}
+          ${merge ? "" : `<tr class="bill-total"><td>${buy ? "ยอดจ่ายสุทธิ" : "ยอดรับสุทธิ"}</td><td class="num">${money(record.total)}</td></tr>`}
+        </tbody>
+      </table>
+      ${merge ? "" : `<p class="bill-doc-words">(${bahtText(record.total)})</p>`}
+      ${record.note ? `<p>หมายเหตุ: ${escapeHtml(record.note)}</p>` : ""}
+      <div class="bill-doc-sign">${signs.map((sign) => `<div>${sign}</div>`).join("")}</div>
+    </div>
+  `;
+  document.body.classList.add("print-rice");
+  const cleanup = () => {
+    document.body.classList.remove("print-rice");
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+}
+
+// อ่านจำนวนเงินเป็นตัวอักษรไทย เช่น 1,250.50 → หนึ่งพันสองร้อยห้าสิบบาทห้าสิบสตางค์
+function bahtText(value) {
+  const amount = Math.round(Math.max(0, numberValue(value)) * 100) / 100;
+  if (!amount) return "ศูนย์บาทถ้วน";
+  const digits = ["", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+  const units = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน"];
+  const readGroup = (num, afterMillion) => {
+    const text = String(num);
+    let out = "";
+    for (let i = 0; i < text.length; i += 1) {
+      const digit = Number(text[i]);
+      const position = text.length - i - 1;
+      if (!digit) continue;
+      if (position === 1 && digit === 1) out += "สิบ";
+      else if (position === 1 && digit === 2) out += "ยี่สิบ";
+      else if (position === 0 && digit === 1 && (text.length > 1 || afterMillion)) out += "เอ็ด";
+      else out += digits[digit] + units[position];
+    }
+    return out;
+  };
+  const readNumber = (num) => {
+    if (num >= 1000000) {
+      const rest = num % 1000000;
+      return `${readNumber(Math.floor(num / 1000000))}ล้าน${rest ? readGroup(rest, true) : ""}`;
+    }
+    return readGroup(num, false);
+  };
+  const baht = Math.floor(amount);
+  const satang = Math.round((amount - baht) * 100);
+  return `${baht ? `${readNumber(baht)}บาท` : ""}${satang ? `${readNumber(satang)}สตางค์` : "ถ้วน"}`;
+}
+
 /* ---------- จัดการผู้ใช้ (ผู้บริหาร) ---------- */
 
 function userDisplayName(username) {
   if (!username) return "";
+  if (sameUser(username, GUEST_USERNAME)) return "พนักงาน (ไม่ได้ล็อกอิน)";
   const found = usersCache?.find((user) => sameUser(user.username, username));
   if (found) return found.displayName || found.username;
   if (sameUser(username, currentUsername())) return auth.user.displayName || username;
@@ -4507,6 +6165,10 @@ function startEditCategory(id) {
 }
 
 function deleteCategory(id) {
+  if (isRiceCategory(id)) {
+    toast("หมวดนี้ใช้กับระบบซื้อ-ขายข้าว ลบไม่ได้ (แก้ชื่อ/ไอคอนได้)");
+    return;
+  }
   if (state.transactions.some((tx) => tx.categoryId === id) || state.budgets.some((budget) => budget.categoryIds.includes(id))) {
     toast("หมวดหมู่นี้มีรายการหรืองบใช้งานอยู่");
     return;
@@ -4539,6 +6201,7 @@ function openSaveMoneyDialog() {
 function openTransactionDialog(id = "", initialDate = "", defaultType = "expense", preset = {}) {
   const form = dom.transactionForm;
   const tx = state.transactions.find((item) => item.id === id);
+  if (tx && redirectRiceTransaction(tx)) return;
   const selectedType = tx?.type || (TRANSACTION_TYPES.includes(defaultType) ? defaultType : "expense");
   form.reset();
   form.elements.id.value = tx?.id || "";
@@ -4742,6 +6405,8 @@ function collectTransactionForm() {
 }
 
 function deleteTransaction(id) {
+  const tx = state.transactions.find((item) => item.id === id);
+  if (tx && redirectRiceTransaction(tx)) return;
   if (!confirm("ลบรายการนี้หรือไม่?")) return;
   state.transactions = state.transactions.filter((tx) => tx.id !== id);
   saveAndRender("ลบรายการแล้ว");
