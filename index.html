@@ -4256,21 +4256,11 @@ function submitStaffForm(event) {
 }
 
 /* ---------- ซื้อ-ขายข้าว (แยกจากบัญชี: ข้อมูลอยู่ชีต MM_Rice หรือ localStorage ของตัวเอง) ----------
- * บิลที่ชำระแล้วสร้างธุรกรรมในหมวด "ซื้อข้าว/ขายข้าว" ให้อัตโนมัติ แก้/ลบธุรกรรมนั้นได้จากหน้านี้เท่านั้น
+ * บิลที่ชำระแล้วสร้างธุรกรรมในหมวด "ซื้อข้าว/ขายข้าว" ให้อัตโนมัติ ผู้บริหารแก้/ลบธุรกรรมนั้นในสมุดบัญชีได้โดยตรง
  */
 
 function isRiceCategory(categoryId) {
   return String(categoryId || "").startsWith("cat_rice_");
-}
-
-function redirectRiceTransaction(tx) {
-  if (!isRiceCategory(tx.categoryId)) return false;
-  toast("รายการนี้มาจากบิลซื้อ-ขายข้าว แก้ไข/ลบได้ที่หน้าซื้อ-ขายข้าว");
-  closeTransactionDialog();
-  rice.filters.search = String(tx.note || "").split(" · ")[0];
-  rice.filters.range = "all";
-  openRice("manager", "list");
-  return true;
 }
 
 function bindRiceEvents() {
@@ -6201,7 +6191,6 @@ function openSaveMoneyDialog() {
 function openTransactionDialog(id = "", initialDate = "", defaultType = "expense", preset = {}) {
   const form = dom.transactionForm;
   const tx = state.transactions.find((item) => item.id === id);
-  if (tx && redirectRiceTransaction(tx)) return;
   const selectedType = tx?.type || (TRANSACTION_TYPES.includes(defaultType) ? defaultType : "expense");
   form.reset();
   form.elements.id.value = tx?.id || "";
@@ -6406,8 +6395,8 @@ function collectTransactionForm() {
 
 function deleteTransaction(id) {
   const tx = state.transactions.find((item) => item.id === id);
-  if (tx && redirectRiceTransaction(tx)) return;
-  if (!confirm("ลบรายการนี้หรือไม่?")) return;
+  const riceNote = tx && isRiceCategory(tx.categoryId) ? "\n(รายการนี้มาจากบิลซื้อ-ขายข้าว ตัวบิลจะยังอยู่ที่หน้าซื้อ-ขายข้าว)" : "";
+  if (!confirm(`ลบรายการนี้หรือไม่?${riceNote}`)) return;
   state.transactions = state.transactions.filter((tx) => tx.id !== id);
   saveAndRender("ลบรายการแล้ว");
 }
