@@ -808,6 +808,14 @@ fieldset { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--line)
 .day-list-title { margin: 0 0 8px; }
 .day-dialog .transaction-list { max-height: 40vh; overflow-y: auto; }
 
+/* คืนเงินยืม */
+.repay-date-field { display: grid; gap: 4px; min-width: 0; }
+.repay-field-label { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
+.repay-date-row { display: grid; grid-template-columns: 64px minmax(0, 1fr) 84px; gap: 6px; }
+.repay-hint { color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.repay-hint.is-ok { color: var(--income-ink); }
+.repay-hint.is-warn { color: var(--expense-ink); }
+
 /* หน้าพนักงาน */
 .staff-workspace { display: grid; gap: 14px; max-width: 720px; margin: 0 auto; }
 .staff-top-actions { justify-content: flex-end; }
@@ -1738,6 +1746,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
                   <option value="transfer">โอนเงิน</option>
                   <option value="borrow">ยืมเงิน</option>
                   <option value="lend">ให้ยืม</option>
+                  <option value="repay">คืนเงินยืม</option>
                 </select>
               </label>
               <label>
@@ -2634,6 +2643,63 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
     </div>
   </dialog>
 
+  <dialog class="transaction-dialog day-dialog" id="repayDialog">
+    <form class="dialog-card" id="repayForm" autocomplete="off">
+      <div class="dialog-head">
+        <div>
+          <p class="kicker">คืนเงินยืม (คืนได้หลายครั้ง)</p>
+          <h2 id="repayTitle">บันทึกการคืนเงิน</h2>
+          <p class="day-dialog-sub" id="repaySub"></p>
+        </div>
+        <button class="icon-btn" type="button" id="closeRepayBtn" title="ปิด">×</button>
+      </div>
+
+      <div class="day-totals" id="repayTotals"></div>
+
+      <input name="id" type="hidden" />
+      <input name="loanId" type="hidden" />
+      <div class="day-quick-form">
+        <div class="form-grid">
+          <div class="repay-date-field">
+            <span class="repay-field-label">วันที่คืน (วัน / เดือน / ปี พ.ศ.)</span>
+            <input name="date" type="hidden" />
+            <div class="repay-date-row">
+              <select id="repayDay" aria-label="วัน"></select>
+              <select id="repayMonth" aria-label="เดือน"></select>
+              <input id="repayYear" type="number" min="2400" max="2700" step="1" inputmode="numeric" aria-label="ปี พ.ศ." />
+            </div>
+            <small class="repay-hint" id="repayDateText"></small>
+          </div>
+          <label>
+            <span>จำนวนเงินที่คืน (คืนบางส่วนได้)</span>
+            <div class="date-button-row">
+              <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" required />
+              <button class="ghost-btn" type="button" id="repayFullBtn" title="ใส่ยอดคงเหลือทั้งหมด">คืนครบ</button>
+            </div>
+            <small class="repay-hint" id="repayPreview"></small>
+          </label>
+          <label>
+            <span id="repayWalletLabel">บัญชี</span>
+            <select name="walletId"></select>
+          </label>
+          <label>
+            <span>หมายเหตุ</span>
+            <input name="note" type="text" placeholder="เช่น โอนคืนงวดที่ 1" />
+          </label>
+        </div>
+        <div class="day-quick-actions">
+          <button class="secondary-btn is-hidden" type="button" id="repayCancelEditBtn">ยกเลิกการแก้ไข</button>
+          <button class="primary-btn" type="submit" id="repaySubmitBtn">บันทึกการคืนเงิน</button>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="day-list-title">ประวัติการคืน</h3>
+        <div class="transaction-list" id="repayList"></div>
+      </div>
+    </form>
+  </dialog>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -2681,15 +2747,17 @@ const LEGACY_ROUTES = {
   settings: "details:categories"
 };
 
-const TYPE_LABELS = { income: "รายรับ", expense: "รายจ่าย", transfer: "โอนเงิน", borrow: "ยืมเงิน", lend: "ให้ยืม" };
-const TYPE_SIGNS = { income: "+", expense: "-", transfer: "⇄", borrow: "+", lend: "-" };
+// repay = คืนเงินยืม ผูกกับรายการยืม/ให้ยืมผ่าน loanId (คืนได้หลายครั้ง) ทิศทางเงินขึ้นกับรายการยืม: คืนให้คนอื่น = จ่ายออก, รับคืน = รับเข้า
+const TYPE_LABELS = { income: "รายรับ", expense: "รายจ่าย", transfer: "โอนเงิน", borrow: "ยืมเงิน", lend: "ให้ยืม", repay: "คืนเงินยืม" };
+const TYPE_SIGNS = { income: "+", expense: "-", transfer: "⇄", borrow: "+", lend: "-", repay: "-" };
 const TRANSACTION_TYPES = Object.keys(TYPE_LABELS);
 const TYPE_META = {
   income: { name: "รายรับ", icon: "฿", color: "#e3f6ee" },
   expense: { name: "รายจ่าย", icon: "•", color: "#fdeaea" },
   transfer: { name: "โอนเงิน", icon: "⇄", color: "#eef0f3" },
   borrow: { name: "ยืมเงิน", icon: "รับ", color: "#e6f0fb" },
-  lend: { name: "ให้ยืม", icon: "ให้", color: "#ece9f8" }
+  lend: { name: "ให้ยืม", icon: "ให้", color: "#ece9f8" },
+  repay: { name: "คืนเงินยืม", icon: "↩", color: "#e3f6ee" }
 };
 
 const CATEGORY_PRESETS = {
@@ -2818,6 +2886,8 @@ function cacheDom() {
     "transactionDateDisplay", "dueDateDisplay", "thaiDatePicker", "thaiPickerMonth", "thaiPickerGrid",
     "saveAndNewBtn", "deleteFromDialogBtn", "logoutBtn", "toast",
     "dayDialog", "dayDialogTitle", "dayDialogSummary", "dayDialogTotals", "dayDialogList", "dayQuickForm", "dayMoreBtn", "closeDayDialogBtn",
+    "repayDialog", "repayForm", "repayTitle", "repaySub", "repayTotals", "repayWalletLabel", "repayFullBtn", "repayCancelEditBtn",
+    "repaySubmitBtn", "repayList", "closeRepayBtn", "repayDay", "repayMonth", "repayYear", "repayDateText", "repayPreview",
     "staffShell", "staffUserLabel", "staffLogoutBtn", "staffDateLabel", "staffDateNote", "staffTodayBtn", "staffFormTitle", "staffForm",
     "staffCancelEditBtn", "staffSubmitBtn", "staffListNote", "staffList",
     "riceShell", "riceUserLabel", "riceStockTabBtn", "riceReloadBtn", "riceBackBtn", "riceBillKicker", "riceBillForm", "ricePartyLabel",
@@ -3037,6 +3107,22 @@ function bindEvents() {
   dom.dayQuickForm.querySelectorAll('input[name="type"]').forEach((radio) => radio.addEventListener("change", () => fillDayQuickOptions()));
   dom.dayMoreBtn.addEventListener("click", () => openTransactionDialog("", state.ui.selectedDate, dom.dayQuickForm.elements.type.value));
 
+  dom.closeRepayBtn.addEventListener("click", () => dom.repayDialog.close());
+  dom.repayDialog.addEventListener("click", (event) => { if (event.target === dom.repayDialog) dom.repayDialog.close(); });
+  dom.repayForm.addEventListener("submit", submitRepayForm);
+  dom.repayFullBtn.addEventListener("click", () => {
+    const form = dom.repayForm;
+    const loan = getLoan(form.elements.loanId.value);
+    const editing = state.transactions.find((tx) => tx.id === form.elements.id.value);
+    if (loan) form.elements.amount.value = roundMoney(loanRemaining(loan) + (editing?.amount || 0));
+    updateRepayPreview();
+  });
+  dom.repayMonth.innerHTML = THAI_MONTHS.map((name, index) => `<option value="${pad2(index + 1)}">${name}</option>`).join("");
+  [dom.repayDay, dom.repayMonth].forEach((select) => select.addEventListener("change", syncRepayDate));
+  dom.repayYear.addEventListener("input", syncRepayDate);
+  dom.repayForm.elements.amount.addEventListener("input", updateRepayPreview);
+  dom.repayCancelEditBtn.addEventListener("click", () => openRepayDialog(dom.repayForm.elements.loanId.value));
+
   setupCategoryPicker(dom.transactionForm.elements.categoryId);
   setupCategoryPicker(dom.dayQuickForm.elements.categoryId);
   setupCategoryPicker(dom.staffForm.elements.categoryId, { getCategories: () => staffData?.categories || [], allowAdd: false });
@@ -3097,6 +3183,7 @@ function handleActionClick(event) {
     if (action === "edit-category") startEditCategory(id);
     if (action === "delete-category") deleteCategory(id);
     if (action === "toggle-loan-status") toggleLoanStatus(id);
+    if (action === "repay-loan") openRepayDialog(id);
     if (action === "add-preset") addPresetCategory(target.dataset.type, Number(target.dataset.index), false);
     if (action === "add-preset-group") addPresetGroup(target.dataset.type);
     return;
@@ -3480,6 +3567,7 @@ function normalizeTransaction(transaction, fallbackWalletId = "cash") {
     status: transaction.status === "paid" ? "paid" : "open",
     note: textValue(transaction.note),
     tags: Array.isArray(transaction.tags) ? transaction.tags.map(textValue).filter(Boolean) : splitTags(transaction.tags),
+    loanId: type === "repay" ? textValue(transaction.loanId) : "",
     createdAt: transaction.createdAt || new Date().toISOString(),
     updatedAt: transaction.updatedAt || "",
     createdBy: textValue(transaction.createdBy)
@@ -3590,6 +3678,7 @@ function render() {
   renderDataTab();
   renderUsersTab();
   if (dom.dayDialog?.open) renderDayDialog();
+  if (dom.repayDialog?.open) renderRepayDialog();
 }
 
 function renderFrame() {
@@ -3667,8 +3756,8 @@ function renderCalendar() {
   const byDate = new Map();
   state.transactions.forEach((tx) => {
     const entry = byDate.get(tx.date) || { income: 0, expense: 0, count: 0 };
-    if (tx.type === "income" || tx.type === "borrow") entry.income += tx.amount;
-    if (tx.type === "expense" || tx.type === "lend") entry.expense += tx.amount;
+    if (isMoneyIn(tx)) entry.income += tx.amount;
+    if (isMoneyOut(tx)) entry.expense += tx.amount;
     entry.count += 1;
     byDate.set(tx.date, entry);
   });
@@ -3707,8 +3796,8 @@ function renderSelectedDay() {
     .filter((tx) => tx.date !== selectedDate)
     .map((tx) => ({ ...tx, isDueOnly: true }));
   const items = [...dayTransactions, ...dueLoans];
-  const dayIncome = dayTransactions.reduce((sum, tx) => sum + (tx.type === "income" || tx.type === "borrow" ? tx.amount : 0), 0);
-  const dayExpense = dayTransactions.reduce((sum, tx) => sum + (tx.type === "expense" || tx.type === "lend" ? tx.amount : 0), 0);
+  const dayIncome = dayTransactions.reduce((sum, tx) => sum + (isMoneyIn(tx) ? tx.amount : 0), 0);
+  const dayExpense = dayTransactions.reduce((sum, tx) => sum + (isMoneyOut(tx) ? tx.amount : 0), 0);
 
   dom.selectedDayTitle.textContent = `${dayName(selectedDate)} ${formatDate(selectedDate)}`;
   dom.selectedDaySummary.textContent = `${dayTransactions.length} รายการ${dueLoans.length ? ` · ครบกำหนดคืน ${dueLoans.length} รายการ` : ""}`;
@@ -5365,8 +5454,8 @@ function renderDayDialog() {
     .filter((tx) => tx.date !== date)
     .map((tx) => ({ ...tx, isDueOnly: true }));
   const items = [...dayTransactions, ...dueLoans];
-  const income = dayTransactions.reduce((sum, tx) => sum + (tx.type === "income" || tx.type === "borrow" ? tx.amount : 0), 0);
-  const expense = dayTransactions.reduce((sum, tx) => sum + (tx.type === "expense" || tx.type === "lend" ? tx.amount : 0), 0);
+  const income = dayTransactions.reduce((sum, tx) => sum + (isMoneyIn(tx) ? tx.amount : 0), 0);
+  const expense = dayTransactions.reduce((sum, tx) => sum + (isMoneyOut(tx) ? tx.amount : 0), 0);
 
   dom.dayDialogTitle.textContent = `${dayName(date)} ${formatDate(date)}`;
   dom.dayDialogSummary.textContent = `${dayTransactions.length} รายการ${dueLoans.length ? ` · ครบกำหนดคืน ${dueLoans.length} รายการ` : ""}`;
@@ -5480,8 +5569,8 @@ function renderBudgetSnapshot() {
 
 function renderLoanSnapshot() {
   const open = state.transactions.filter((tx) => isLoanType(tx) && tx.status !== "paid");
-  const borrowed = open.filter((tx) => tx.type === "borrow").reduce((sum, tx) => sum + tx.amount, 0);
-  const lent = open.filter((tx) => tx.type === "lend").reduce((sum, tx) => sum + tx.amount, 0);
+  const borrowed = open.filter((tx) => tx.type === "borrow").reduce((sum, tx) => sum + loanOutstanding(tx), 0);
+  const lent = open.filter((tx) => tx.type === "lend").reduce((sum, tx) => sum + loanOutstanding(tx), 0);
   const overdue = open.filter((tx) => tx.dueDate && tx.dueDate < todayKey()).length;
   dom.loanSnapshot.innerHTML = [
     summaryRowHtml("ยืมมา ยังไม่คืน", money(borrowed), `${open.filter((tx) => tx.type === "borrow").length} รายการ`, "borrow-text"),
@@ -5604,7 +5693,7 @@ function transactionRowHtml(tx) {
   const meta = getTransactionMeta(tx);
   const tags = tx.tags?.length ? ` ${tx.tags.map((tag) => `<span class="tag-badge">#${escapeHtml(tag)}</span>`).join(" ")}` : "";
   const subText = isLoanType(tx)
-    ? `${escapeHtml(loanPersonText(tx))}${tx.dueDate ? ` · กำหนดคืน ${formatDate(tx.dueDate)}` : ""} ${loanStatusBadge(tx)}${tags}`
+    ? `${escapeHtml(loanPersonText(tx))}${tx.dueDate ? ` · กำหนดคืน ${formatDate(tx.dueDate)}` : ""}${loanRepaidText(tx)} ${loanStatusBadge(tx)}${tags}`
     : `${escapeHtml(meta.name)}${tags}`;
   const byUser = tx.createdBy ? ` · <span class="by-user">โดย ${escapeHtml(userDisplayName(tx.createdBy))}</span>` : "";
   return `
@@ -5618,9 +5707,10 @@ function transactionRowHtml(tx) {
       </td>
       <td>${escapeHtml(walletFlowLabel(tx))}</td>
       <td>${TYPE_LABELS[tx.type]}</td>
-      <td class="num transaction-amount ${amountClass(tx.type)}">${TYPE_SIGNS[tx.type]} ${money(tx.amount)}</td>
+      <td class="num transaction-amount ${txAmountClass(tx)}">${txSign(tx)} ${money(tx.amount)}</td>
       <td>
         <div class="row-actions">
+          ${isLoanType(tx) && tx.status !== "paid" ? `<button class="mini-btn ok" type="button" data-action="repay-loan" data-id="${escapeAttr(tx.id)}" title="บันทึกการคืนเงิน">฿</button>` : ""}
           <button class="mini-btn" type="button" data-action="edit-transaction" data-id="${escapeAttr(tx.id)}" title="แก้ไข">✎</button>
           <button class="mini-btn danger" type="button" data-action="delete-transaction" data-id="${escapeAttr(tx.id)}" title="ลบ">×</button>
         </div>
@@ -5641,7 +5731,9 @@ function transactionCardHtml(tx, options = {}) {
   }
   if (tx.createdBy) detailParts.push(`<span class="by-user">โดย ${escapeHtml(userDisplayName(tx.createdBy))}</span>`);
   const loanButton = isLoanType(tx) && options.actions
-    ? `<button class="mini-btn ${tx.status === "paid" ? "" : "ok"}" type="button" data-action="toggle-loan-status" data-id="${escapeAttr(tx.id)}" title="${tx.status === "paid" ? "ตั้งเป็นยังไม่คืน" : "ทำเครื่องหมายว่าคืนแล้ว"}">${tx.status === "paid" ? "↺" : "✓"}</button>`
+    ? (tx.status === "paid"
+        ? `<button class="mini-btn" type="button" data-action="toggle-loan-status" data-id="${escapeAttr(tx.id)}" title="ตั้งเป็นยังไม่คืน">↺</button>`
+        : `<button class="mini-btn ok" type="button" data-action="repay-loan" data-id="${escapeAttr(tx.id)}" title="บันทึกการคืนเงิน (คืนได้หลายครั้ง)">฿</button>`)
     : "";
   const actions = options.actions
     ? `<div class="row-actions">
@@ -5655,14 +5747,19 @@ function transactionCardHtml(tx, options = {}) {
       <div class="transaction-icon" style="--item-color:${escapeAttr(meta.color)}">${escapeHtml(meta.icon)}</div>
       <div class="transaction-main">
         <strong>${escapeHtml(tx.note || meta.name || TYPE_LABELS[tx.type])}</strong>
-        <small>${detailParts.join(" · ")}${isLoanType(tx) ? ` ${loanStatusBadge(tx)}` : ""}</small>
+        <small>${detailParts.join(" · ")}${isLoanType(tx) ? `${loanRepaidText(tx)} ${loanStatusBadge(tx)}` : ""}</small>
       </div>
       <div class="transaction-side">
-        <div class="transaction-amount ${amountClass(tx.type)}">${TYPE_SIGNS[tx.type]} ${money(tx.amount)}</div>
+        <div class="transaction-amount ${txAmountClass(tx)}">${txSign(tx)} ${money(tx.amount)}</div>
         ${actions}
       </div>
     </article>
   `;
+}
+
+function loanRepaidText(loan) {
+  const repaid = loanRepaid(loan);
+  return repaid ? ` · คืนแล้ว ${money(repaid)} · เหลือ ${money(loanRemaining(loan))}` : "";
 }
 
 function loanStatusBadge(tx) {
@@ -5958,8 +6055,8 @@ function renderLoans() {
   const loans = state.transactions.filter(isLoanType);
   const open = loans.filter((tx) => tx.status !== "paid").sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999") || b.date.localeCompare(a.date));
   const paid = loans.filter((tx) => tx.status === "paid").sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || b.date.localeCompare(a.date));
-  const borrowed = open.filter((tx) => tx.type === "borrow").reduce((sum, tx) => sum + tx.amount, 0);
-  const lent = open.filter((tx) => tx.type === "lend").reduce((sum, tx) => sum + tx.amount, 0);
+  const borrowed = open.filter((tx) => tx.type === "borrow").reduce((sum, tx) => sum + loanOutstanding(tx), 0);
+  const lent = open.filter((tx) => tx.type === "lend").reduce((sum, tx) => sum + loanOutstanding(tx), 0);
   const overdue = open.filter((tx) => tx.dueDate && tx.dueDate < todayKey());
 
   dom.loanCards.innerHTML = `
@@ -5981,7 +6078,7 @@ function renderLoans() {
   dom.paidLoanNote.textContent = paid.length ? `${paid.length} รายการ` : "ยังไม่มีรายการที่คืนแล้ว";
   dom.paidLoanList.innerHTML = paid.length
     ? paid.slice(0, 10).map((tx) => transactionCardHtml(tx, { actions: true, showDate: true })).join("")
-    : `<div class="empty-state">เมื่อกด ✓ ที่รายการค้าง จะย้ายมาแสดงที่นี่</div>`;
+    : `<div class="empty-state">กด ฿ ที่รายการค้างเพื่อบันทึกการคืน (คืนได้หลายครั้ง) เมื่อคืนครบจะย้ายมาแสดงที่นี่</div>`;
 }
 
 /* ---------- Data tab ---------- */
@@ -6191,7 +6288,11 @@ function openSaveMoneyDialog() {
 function openTransactionDialog(id = "", initialDate = "", defaultType = "expense", preset = {}) {
   const form = dom.transactionForm;
   const tx = state.transactions.find((item) => item.id === id);
-  const selectedType = tx?.type || (TRANSACTION_TYPES.includes(defaultType) ? defaultType : "expense");
+  if (tx?.type === "repay") {
+    openRepayDialog(tx.loanId, tx.id);
+    return;
+  }
+  const selectedType = tx?.type || (TRANSACTION_TYPES.includes(defaultType) && defaultType !== "repay" ? defaultType : "expense");
   form.reset();
   form.elements.id.value = tx?.id || "";
   form.querySelector(`input[name="type"][value="${selectedType}"]`).checked = true;
@@ -6333,6 +6434,10 @@ function saveTransactionFromForm(addAnother) {
     return;
   }
   const index = state.transactions.findIndex((item) => item.id === tx.id);
+  if (index >= 0 && isLoanType(state.transactions[index]) && !isLoanType(tx) && getRepayments(tx.id).length) {
+    toast("รายการนี้มีประวัติการคืนเงิน เปลี่ยนเป็นประเภทอื่นไม่ได้ (ลบประวัติการคืนก่อน)");
+    return;
+  }
   if (index >= 0) {
     state.transactions[index] = { ...state.transactions[index], ...tx, updatedAt: new Date().toISOString() };
   } else {
@@ -6396,9 +6501,159 @@ function collectTransactionForm() {
 function deleteTransaction(id) {
   const tx = state.transactions.find((item) => item.id === id);
   const riceNote = tx && isRiceCategory(tx.categoryId) ? "\n(รายการนี้มาจากบิลซื้อ-ขายข้าว ตัวบิลจะยังอยู่ที่หน้าซื้อ-ขายข้าว)" : "";
-  if (!confirm(`ลบรายการนี้หรือไม่?${riceNote}`)) return;
-  state.transactions = state.transactions.filter((tx) => tx.id !== id);
+  const repayIds = new Set(tx && isLoanType(tx) ? getRepayments(id).map((item) => item.id) : []);
+  const repayNote = repayIds.size ? `\nประวัติการคืนเงิน ${repayIds.size} ครั้งจะถูกลบด้วย` : "";
+  if (!confirm(`ลบรายการนี้หรือไม่?${riceNote}${repayNote}`)) return;
+  state.transactions = state.transactions.filter((item) => item.id !== id && !repayIds.has(item.id));
+  if (tx?.type === "repay") syncLoanStatus(tx.loanId);
   saveAndRender("ลบรายการแล้ว");
+  if (tx?.type === "repay" && dom.repayDialog.open && dom.repayForm.elements.id.value === id) openRepayDialog(tx.loanId);
+}
+
+/* ---------- คืนเงินยืม (คืนได้หลายครั้ง) ---------- */
+
+function openRepayDialog(loanId, repayId = "") {
+  const loan = getLoan(loanId);
+  if (!loan) {
+    toast("ไม่พบรายการยืม/ให้ยืมของการคืนเงินนี้");
+    return;
+  }
+  const repay = repayId ? state.transactions.find((tx) => tx.id === repayId && tx.type === "repay") : null;
+  const form = dom.repayForm;
+  form.reset();
+  form.elements.loanId.value = loan.id;
+  form.elements.id.value = repay?.id || "";
+  form.elements.walletId.innerHTML = state.wallets.map((wallet) => `<option value="${escapeAttr(wallet.id)}">${escapeHtml(wallet.name)}</option>`).join("");
+  form.elements.walletId.value = repay?.walletId || loan.walletId;
+  if (!form.elements.walletId.value && state.wallets[0]) form.elements.walletId.value = state.wallets[0].id;
+  setRepayDate(repay?.date || todayKey());
+  form.elements.amount.value = repay ? repay.amount : loanRemaining(loan) || "";
+  form.elements.note.value = repay?.note || "";
+  dom.repayCancelEditBtn.classList.toggle("is-hidden", !repay);
+  dom.repaySubmitBtn.textContent = repay ? "บันทึกการแก้ไข" : "บันทึกการคืนเงิน";
+  renderRepayDialog();
+  if (!dom.repayDialog.open) dom.repayDialog.showModal();
+  setTimeout(() => form.elements.amount.select(), 50);
+}
+
+function renderRepayDialog() {
+  const loan = getLoan(dom.repayForm.elements.loanId.value);
+  if (!loan) {
+    dom.repayDialog.close();
+    return;
+  }
+  const borrow = loan.type === "borrow";
+  const repayments = getRepayments(loan.id);
+  const remaining = loanRemaining(loan);
+  dom.repayTitle.textContent = borrow ? `คืนเงินให้ ${loan.person || "ไม่ระบุ"}` : `รับเงินคืนจาก ${loan.person || "ไม่ระบุ"}`;
+  dom.repaySub.textContent = [
+    `${borrow ? "ยืมมา" : "ให้ยืม"}เมื่อ ${formatDate(loan.date)}`,
+    loan.dueDate ? `กำหนดคืน ${formatDate(loan.dueDate)}` : "",
+    loan.note
+  ].filter(Boolean).join(" · ");
+  dom.repayWalletLabel.textContent = borrow ? "จ่ายคืนจากบัญชี" : "รับเงินเข้าบัญชี";
+  dom.repayTotals.innerHTML = `
+    <div class="day-total"><span>${borrow ? "ยอดยืม" : "ยอดให้ยืม"}</span><b>${money(loan.amount)}</b></div>
+    <div class="day-total"><span>คืนแล้ว ${repayments.length} ครั้ง</span><b class="income-text">${money(loanRepaid(loan))}</b></div>
+    <div class="day-total"><span>คงเหลือ</span><b class="${remaining ? "expense-text" : "income-text"}">${remaining ? money(remaining) : "คืนครบแล้ว"}</b></div>
+  `;
+  // ประวัติเรียงตามวันที่คืน พร้อมยอดคงเหลือหลังแต่ละครั้ง
+  let balance = loan.amount;
+  const balances = new Map(repayments.map((tx) => {
+    balance = Math.max(0, roundMoney(balance - tx.amount));
+    return [tx.id, balance];
+  }));
+  dom.repayList.innerHTML = repayments.length
+    ? repayments.slice().reverse().map((tx, index) => `
+        <div>
+          <div class="repay-hint">ครั้งที่ ${repayments.length - index} · ${dayName(tx.date)} ${formatDate(tx.date)} · คงเหลือหลังคืน ${money(balances.get(tx.id))}</div>
+          ${transactionCardHtml(tx, { actions: true })}
+        </div>
+      `).join("")
+    : `<div class="empty-state">ยังไม่มีการคืนเงิน</div>`;
+  updateRepayPreview();
+}
+
+function setRepayDate(dateKey) {
+  const parsed = parseDateKey(dateKey) || parseDateKey(todayKey());
+  dom.repayMonth.value = pad2(parsed.month);
+  dom.repayYear.value = parsed.year + 543;
+  fillRepayDays(parsed.day);
+  syncRepayDate();
+}
+
+function fillRepayDays(keepDay) {
+  const year = Number(dom.repayYear.value) - 543;
+  const month = Number(dom.repayMonth.value);
+  const days = year > 1800 && month ? new Date(year, month, 0).getDate() : 31;
+  const day = Math.min(Number(keepDay || dom.repayDay.value) || 1, days);
+  dom.repayDay.innerHTML = Array.from({ length: days }, (_, i) => `<option value="${pad2(i + 1)}">${i + 1}</option>`).join("");
+  dom.repayDay.value = pad2(day);
+}
+
+// รวมวัน/เดือน/ปี พ.ศ. เป็นวันที่ (ค.ศ.) ในช่อง date ที่ซ่อนไว้
+function syncRepayDate() {
+  fillRepayDays();
+  const year = Number(dom.repayYear.value) - 543;
+  const dateKey = `${year}-${dom.repayMonth.value}-${dom.repayDay.value}`;
+  const valid = String(dom.repayYear.value).length === 4 && isDateKey(dateKey);
+  dom.repayForm.elements.date.value = valid ? dateKey : "";
+  dom.repayDateText.textContent = valid ? `วัน${dayName(dateKey)}ที่ ${formatDate(dateKey)}${dateKey > todayKey() ? " (วันล่วงหน้า)" : ""}` : "กรุณาระบุปี พ.ศ. 4 หลัก";
+  dom.repayDateText.className = `repay-hint${valid ? "" : " is-warn"}`;
+}
+
+// คำนวณยอดคงเหลือหลังคืนครั้งนี้ทันทีที่พิมพ์จำนวนเงิน
+function updateRepayPreview() {
+  const form = dom.repayForm;
+  const loan = getLoan(form.elements.loanId.value);
+  if (!loan) return;
+  const editing = state.transactions.find((tx) => tx.id === form.elements.id.value && tx.type === "repay");
+  const before = roundMoney(loanRemaining(loan) + (editing?.amount || 0));
+  const amount = roundMoney(form.elements.amount.value);
+  const after = roundMoney(before - amount);
+  let text = `ยอดค้างก่อนคืน ${money(before)}`;
+  let tone = "";
+  if (amount > 0 && after < 0) {
+    text += ` · เกินยอดค้าง ${money(-after)}`;
+    tone = "is-warn";
+  } else if (amount > 0) {
+    text += after ? ` · คืนครั้งนี้ ${money(amount)} → เหลือ ${money(after)}` : " · คืนครั้งนี้แล้วครบพอดี 🎉";
+    tone = "is-ok";
+  }
+  dom.repayPreview.textContent = text;
+  dom.repayPreview.className = `repay-hint ${tone}`.trim();
+}
+
+function submitRepayForm(event) {
+  event.preventDefault();
+  const form = dom.repayForm;
+  const loan = getLoan(form.elements.loanId.value);
+  if (!loan) return toast("ไม่พบรายการยืม/ให้ยืม");
+  const amount = roundMoney(form.elements.amount.value);
+  const date = form.elements.date.value;
+  const walletId = form.elements.walletId.value;
+  if (!(amount > 0)) return toast("กรุณาระบุจำนวนเงินมากกว่า 0");
+  if (!isDateKey(date)) return toast("กรุณาระบุวันที่คืนให้ถูกต้อง (ปี พ.ศ. 4 หลัก)");
+  if (date < loan.date) return toast(`วันที่คืนต้องไม่ก่อนวันที่${loan.type === "borrow" ? "ยืม" : "ให้ยืม"} (${formatDate(loan.date)})`);
+  if (!walletId) return toast("กรุณาเลือกบัญชี");
+  const existing = state.transactions.find((tx) => tx.id === form.elements.id.value && tx.type === "repay");
+  const allowed = roundMoney(loanRemaining(loan) + (existing?.amount || 0));
+  if (amount > allowed) return toast(`ยอดคืนเกินยอดคงเหลือ ${money(allowed)}`);
+
+  const now = new Date().toISOString();
+  const fields = { type: "repay", loanId: loan.id, date, amount, walletId, person: loan.person, note: textValue(form.elements.note.value) };
+  if (existing) {
+    Object.assign(existing, fields, { updatedAt: now });
+  } else {
+    state.transactions.push(normalizeTransaction({ ...fields, id: uid("tx"), createdAt: now, createdBy: currentUsername() }, walletId));
+  }
+  syncLoanStatus(loan.id);
+  saveState();
+  render();
+  const remaining = loanRemaining(loan);
+  toast(remaining ? `บันทึกการคืน ${money(amount)} แล้ว · เหลือ ${money(remaining)}` : "คืนครบแล้ว 🎉");
+  if (remaining) openRepayDialog(loan.id);
+  else dom.repayDialog.close();
 }
 
 function toggleLoanStatus(id) {
@@ -6524,8 +6779,8 @@ function getWalletBalance(walletId) {
   let balance = wallet ? wallet.initialBalance : 0;
   state.transactions.forEach((tx) => {
     if (tx.walletId === walletId) {
-      if (tx.type === "income" || tx.type === "borrow") balance += tx.amount;
-      if (tx.type === "expense" || tx.type === "lend" || tx.type === "transfer") balance -= tx.amount;
+      if (isMoneyIn(tx)) balance += tx.amount;
+      if (isMoneyOut(tx) || tx.type === "transfer") balance -= tx.amount;
     }
     if (tx.type === "transfer" && tx.targetWalletId === walletId) balance += tx.amount;
   });
@@ -6542,6 +6797,7 @@ function getBudgetProgress(month) {
 
 function getTransactionMeta(tx) {
   if (tx.type === "income" || tx.type === "expense") return getCategory(tx.categoryId);
+  if (tx.type === "repay") return { ...TYPE_META.repay, name: repayLabel(tx) };
   return TYPE_META[tx.type] || TYPE_META.expense;
 }
 
@@ -6565,6 +6821,72 @@ function amountClass(type) {
 
 function isLoanType(tx) {
   return tx.type === "borrow" || tx.type === "lend";
+}
+
+function getLoan(id) {
+  return id ? state.transactions.find((tx) => tx.id === id && isLoanType(tx)) : undefined;
+}
+
+function getRepayments(loanId) {
+  return state.transactions
+    .filter((tx) => tx.type === "repay" && tx.loanId === loanId)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt));
+}
+
+function roundMoney(value) {
+  return Math.round(numberValue(value) * 100) / 100;
+}
+
+function loanRepaid(loan) {
+  return roundMoney(getRepayments(loan.id).reduce((sum, tx) => sum + tx.amount, 0));
+}
+
+function loanRemaining(loan) {
+  return Math.max(0, roundMoney(loan.amount - loanRepaid(loan)));
+}
+
+// ยอดค้างของรายการยืม: ถ้าทำเครื่องหมายว่าคืนแล้ว ถือว่าไม่เหลือ
+function loanOutstanding(loan) {
+  return loan.status === "paid" ? 0 : loanRemaining(loan);
+}
+
+// รับคืนจากคนที่เราให้ยืม = เงินเข้า, คืนให้คนที่เรายืมมา = เงินออก
+function isRepayIncoming(tx) {
+  return getLoan(tx.loanId)?.type === "lend";
+}
+
+function isMoneyIn(tx) {
+  return tx.type === "income" || tx.type === "borrow" || (tx.type === "repay" && isRepayIncoming(tx));
+}
+
+function isMoneyOut(tx) {
+  return tx.type === "expense" || tx.type === "lend" || (tx.type === "repay" && !isRepayIncoming(tx));
+}
+
+function txSign(tx) {
+  if (tx.type === "repay") return isRepayIncoming(tx) ? "+" : "-";
+  return TYPE_SIGNS[tx.type];
+}
+
+function txAmountClass(tx) {
+  return amountClass(tx.type === "repay" ? getLoan(tx.loanId)?.type || "borrow" : tx.type);
+}
+
+function repayLabel(tx) {
+  const loan = getLoan(tx.loanId);
+  const person = tx.person || loan?.person || "ไม่ระบุ";
+  return loan?.type === "lend" ? `รับเงินคืนจาก ${person}` : `คืนเงินให้ ${person}`;
+}
+
+// ปรับสถานะรายการยืมตามยอดที่คืนแล้ว (เรียกเมื่อมีการเพิ่ม/แก้/ลบการคืนเงิน)
+function syncLoanStatus(loanId) {
+  const loan = getLoan(loanId);
+  if (!loan) return;
+  const next = loanRemaining(loan) <= 0 ? "paid" : "open";
+  if (loan.status !== next) {
+    loan.status = next;
+    loan.updatedAt = new Date().toISOString();
+  }
 }
 
 function loanPersonText(tx) {
