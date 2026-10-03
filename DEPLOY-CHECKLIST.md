@@ -13,7 +13,7 @@
 1. สร้าง Google Sheet ใหม่
 2. เปิด `Extensions > Apps Script`
 3. สร้างไฟล์ให้ครบตามนี้ แล้ววางเนื้อหาจากโฟลเดอร์นี้
-   - `Code.gs`
+   - `code.gs`
    - `Index.html`
    - `appsscript.json` ผ่าน Project Settings > Show appsscript.json
 4. เลือก function `setupSheet` แล้วกด Run หนึ่งครั้ง
@@ -30,7 +30,7 @@
 
 ## อัปเดตจากเวอร์ชันเก่า
 
-- วางทับ `Code.gs` และ `Index.html` แล้ว Deploy › Manage deployments › แก้ไข › New version
+- วางทับ `code.gs` และ `Index.html` แล้ว Deploy › Manage deployments › แก้ไข › New version
 - **อย่ารัน `setupSheet()` ซ้ำ** เพราะจะล้างข้อมูลทั้งหมด คอลัมน์ใหม่ (`Kind`, `Goal` ในชีต `MM_Wallets`) จะถูกเติมให้เองตอนเข้าสู่ระบบครั้งถัดไป
 
 ## ย้ายข้อมูลจาก GitHub Pages เข้า Google Sheet

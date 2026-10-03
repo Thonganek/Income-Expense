@@ -39,7 +39,7 @@
 
 1. สร้าง Google Sheet ใหม่
 2. ไปที่ Extensions > Apps Script
-3. สร้าง/วางไฟล์ `Code.gs` และ `Index.html`
+3. สร้าง/วางไฟล์ `code.gs` และ `Index.html`
 4. ถ้าต้องการใส่ manifest ให้เปิด Project Settings > Show appsscript.json แล้ววาง `appsscript.json`
 5. กด Run > `setupSheet()` หนึ่งครั้ง เพื่อสร้างชีตและคอลัมน์
 6. Deploy > New deployment > Web app
