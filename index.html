@@ -2290,57 +2290,47 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
             <div class="panel-head">
               <div>
                 <p class="kicker" id="riceBillKicker">บิลใหม่</p>
-                <h2>บิลรับซื้อ / ขายออกข้าว</h2>
-                <p>ชั่งรถเข้า-ออก หักความชื้นเกินมาตรฐานและสิ่งเจือปนให้อัตโนมัติ คิดราคาเป็นบาท/ตัน</p>
+                <h2>สต็อกซื้อ / ขายข้าว</h2>
+                <p>บันทึกสต็อกข้าวแยกจากบัญชีรายรับรายจ่าย ใช้ราคาเป็นบาทต่อกิโลกรัม</p>
               </div>
             </div>
             <form class="rice-form" id="riceBillForm" autocomplete="off">
               <input name="id" type="hidden" />
-              <input name="paidDate" type="hidden" />
+              <input name="billNo" type="hidden" />
+              <input name="phone" type="hidden" />
+              <input name="plate" type="hidden" />
+              <input name="grossKg" type="hidden" />
+              <input name="tareKg" type="hidden" />
+              <input name="moisture" type="hidden" />
+              <input name="moistureStd" type="hidden" />
+              <input name="impurity" type="hidden" />
+              <input name="pricePerTon" type="hidden" />
+              <input name="otherDeduct" type="hidden" />
+              <input name="otherNote" type="hidden" />
+              <input name="walletId" type="hidden" />
               <div class="segmented seg-2 rice-kind" role="radiogroup" aria-label="ประเภทบิล">
                 <label><input type="radio" name="kind" value="buy" checked /><span>⬇ รับซื้อข้าว</span></label>
                 <label><input type="radio" name="kind" value="sell" /><span>⬆ ขายข้าวออก</span></label>
               </div>
 
               <fieldset>
-                <legend>ข้อมูลบิล</legend>
+                <legend>ข้อมูลสต็อก</legend>
                 <div class="form-grid">
                   <label><span>วันที่</span><input name="date" type="date" required /></label>
-                  <label><span>เลขที่บิล</span><input name="billNo" type="text" readonly placeholder="ออกให้อัตโนมัติเมื่อบันทึก" /></label>
-                  <label><span id="ricePartyLabel">ชื่อผู้ขาย (ชาวนา)</span><input name="party" type="text" list="ricePartyList" required /></label>
-                  <label><span>เบอร์โทร</span><input name="phone" type="tel" inputmode="tel" /></label>
-                  <label><span>ทะเบียนรถ</span><input name="plate" type="text" placeholder="เช่น 80-1234 นครสวรรค์" /></label>
+                  <label data-rice-sell-only><span id="ricePartyLabel">ชื่อผู้ซื้อ</span><input name="party" type="text" list="ricePartyList" /></label>
                   <label><span>ชนิดข้าว</span><input name="riceType" type="text" list="riceTypeList" required placeholder="เช่น ข้าวหอมมะลิ 105" /></label>
+                  <label><span>น้ำหนักรวมข้าว (กก.)</span><input name="payKg" type="number" min="0" step="1" inputmode="numeric" required /></label>
+                  <label><span id="ricePriceLabel">ราคาซื้อ (บาท/กก.)</span><input name="pricePerKg" type="number" min="0" step="0.01" inputmode="decimal" required /></label>
+                  <label><span>ราคาสุทธิ</span><output class="rice-output" id="riceNetOut">฿0.00</output></label>
                 </div>
               </fieldset>
 
-              <fieldset>
-                <legend>การชั่งน้ำหนัก (กิโลกรัม)</legend>
-                <div class="form-grid rice-three">
-                  <label><span>น้ำหนักรถเข้า</span><input name="grossKg" type="number" min="0" step="1" inputmode="numeric" required /></label>
-                  <label><span>น้ำหนักรถออก</span><input name="tareKg" type="number" min="0" step="1" inputmode="numeric" required /></label>
-                  <label><span>น้ำหนักข้าวสุทธิ</span><output class="rice-output" id="riceNetOut">0 กก.</output></label>
-                </div>
-              </fieldset>
-
-              <fieldset>
-                <legend>คุณภาพและราคา</legend>
-                <div class="form-grid rice-three">
-                  <label><span>ความชื้น (%)</span><input name="moisture" type="number" min="0" max="99" step="0.1" inputmode="decimal" placeholder="เช่น 25" /></label>
-                  <label><span>ความชื้นมาตรฐาน (%)</span><input name="moistureStd" type="number" min="0" max="99" step="0.1" inputmode="decimal" value="15" /></label>
-                  <label><span>สิ่งเจือปน (%)</span><input name="impurity" type="number" min="0" max="99" step="0.1" inputmode="decimal" placeholder="0" /></label>
-                  <label><span>ราคา (บาท/ตัน)</span><input name="pricePerTon" type="number" min="0" step="0.01" inputmode="decimal" required /></label>
-                  <label><span>หักอื่น ๆ (บาท)</span><input name="otherDeduct" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0" /></label>
-                  <label><span>รายการหัก</span><input name="otherNote" type="text" placeholder="เช่น ค่าชั่ง ค่าขน" /></label>
-                </div>
-              </fieldset>
-
-              <fieldset>
+              <fieldset data-rice-sell-only>
                 <legend>การชำระเงิน</legend>
                 <div class="form-grid">
-                  <label class="check-row rice-paid-row"><input name="paid" type="checkbox" checked /><span id="ricePaidLabel">จ่ายเงินให้ชาวนาแล้ว</span></label>
-                  <label><span id="riceWalletLabel">จ่ายจากบัญชี</span><select name="walletId"></select></label>
-                  <label class="rice-span-2"><span>หมายเหตุ</span><input name="note" type="text" placeholder="เช่น ข้าวแห้ง คุณภาพดี" /></label>
+                  <label class="check-row rice-paid-row"><input name="paid" type="checkbox" /><span id="ricePaidLabel">จ่ายแล้ว</span></label>
+                  <label><span>วันที่จ่าย</span><input name="paidDate" type="date" /></label>
+                  <label class="rice-span-2"><span>หมายเหตุ</span><input name="note" type="text" placeholder="เช่น ขายให้ลูกค้าประจำ" /></label>
                 </div>
               </fieldset>
 
@@ -2417,7 +2407,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
       <section class="rice-panel" data-rice-panel="list">
         <section class="panel">
           <div class="filters rice-filters">
-            <label><span>ค้นหา</span><input id="riceSearch" type="search" placeholder="เลขที่บิล ชื่อ ทะเบียนรถ ชนิดข้าว" /></label>
+            <label><span>ค้นหา</span><input id="riceSearch" type="search" placeholder="เลขที่บิล ผู้ซื้อ ชนิดข้าว" /></label>
             <label><span>ช่วงเวลา</span>
               <select id="riceRange"><option value="month">เดือนที่เลือก</option><option value="all">ทั้งหมด</option></select>
             </label>
@@ -2426,7 +2416,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
               <select id="riceKindFilter"><option value="all">ทั้งหมด</option><option value="buy">รับซื้อ</option><option value="sell">ขายออก</option><option value="merge">รวมข้าว</option></select>
             </label>
             <label><span>สถานะเงิน</span>
-              <select id="riceStatusFilter"><option value="all">ทั้งหมด</option><option value="paid">ชำระแล้ว</option><option value="unpaid">ค้างชำระ</option></select>
+              <select id="riceStatusFilter"><option value="all">ทั้งหมด</option><option value="paid">จ่ายแล้ว</option><option value="unpaid">ยังไม่จ่าย</option></select>
             </label>
             <button class="secondary-btn" type="button" id="riceExportBtn">CSV</button>
           </div>
@@ -2437,10 +2427,10 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
                 <tr>
                   <th>วันที่ / เลขที่บิล</th>
                   <th>ประเภท</th>
-                  <th>คู่ค้า</th>
+                  <th>ผู้ซื้อ</th>
                   <th>ชนิดข้าว</th>
-                  <th class="num">น้ำหนักคิดเงิน</th>
-                  <th class="num">ราคา/ตัน</th>
+                  <th class="num">น้ำหนักรวม</th>
+                  <th class="num">ราคา/กก.</th>
                   <th class="num">ยอดสุทธิ</th>
                   <th>สถานะ</th>
                   <th class="action-col"></th>
@@ -2466,13 +2456,13 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
           <section class="panel">
             <div class="panel-head">
               <div>
-                <h2>สต็อกข้าวคงเหลือ</h2>
-                <p>รวมทุกชนิด = รับซื้อ + รวมเข้า − ขายออก − รวมออก (น้ำหนักคิดเงิน)</p>
+                <h2>สต็อกซื้อข้าว</h2>
+                <p>รวมตามชนิดข้าวและราคาซื้อเท่านั้น</p>
               </div>
             </div>
             <div class="table-wrap">
               <table class="data-table rice-mini-table">
-                <thead><tr><th>ชนิดข้าว</th><th class="num">รับซื้อ</th><th class="num">ขายออก</th><th class="num">รวมเข้า/ออก</th><th class="num">คงเหลือ</th></tr></thead>
+                <thead><tr><th>ชนิดข้าว</th><th class="num">ราคาซื้อ/กก.</th><th class="num">น้ำหนักรวม</th><th class="num">มูลค่าซื้อ</th></tr></thead>
                 <tbody id="riceStockTable"></tbody>
               </table>
             </div>
@@ -2480,8 +2470,8 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
           <section class="panel">
             <div class="panel-head">
               <div>
-                <h2>ค้างชำระ</h2>
-                <p id="riceUnpaidNote">บิลที่ยังไม่ได้รับ/จ่ายเงิน</p>
+                <h2>รายการสต็อกขายข้าว</h2>
+                <p id="riceUnpaidNote">ผู้ซื้อ น้ำหนักรวม ราคาขายต่อกก. ราคาสุทธิ และสถานะจ่ายเงิน</p>
               </div>
             </div>
             <div class="transaction-list" id="riceUnpaidList"></div>
@@ -2496,7 +2486,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
           </div>
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th>ชนิดข้าว</th><th class="num">ซื้อ (ตัน)</th><th class="num">ซื้อ (บาท)</th><th class="num">เฉลี่ยซื้อ/ตัน</th><th class="num">ขาย (ตัน)</th><th class="num">ขาย (บาท)</th><th class="num">เฉลี่ยขาย/ตัน</th></tr></thead>
+              <thead><tr><th>ชนิดข้าว</th><th class="num">ซื้อ (กก.)</th><th class="num">ซื้อ (บาท)</th><th class="num">เฉลี่ยซื้อ/กก.</th><th class="num">ขาย (กก.)</th><th class="num">ขาย (บาท)</th><th class="num">เฉลี่ยขาย/กก.</th></tr></thead>
               <tbody id="riceTypeSummary"></tbody>
             </table>
           </div>
@@ -2753,11 +2743,6 @@ const TABS = {
 const MANAGER_ROLES = ["admin", "manager"];
 const STAFF_TYPES = ["income", "expense"];
 const GUEST_USERNAME = "guest"; // ต้องตรงกับ MM_GUEST_USER ใน Code.gs
-// ซื้อ-ขายข้าว: ต้องตรงกับ MM_RICE_CATEGORIES ใน Code.gs
-const RICE_CATEGORIES = [
-  { id: "cat_rice_buy", type: "expense", name: "ซื้อข้าว", icon: "🌾", color: "#fff0b3" },
-  { id: "cat_rice_sell", type: "income", name: "ขายข้าว", icon: "🚚", color: "#d3f3dc" }
-];
 const RICE_STORAGE_KEY = "moneybook.standalone.rice.v1";
 const RICE_KIND_LABELS = { buy: "รับซื้อ", sell: "ขายออก", merge: "รวมข้าว" };
 const RICE_KIND_META = { buy: { icon: "🌾", color: "#e3f6ee" }, sell: { icon: "🚚", color: "#fde6d8" }, merge: { icon: "⇶", color: "#ece9f8" } };
@@ -2922,7 +2907,7 @@ function cacheDom() {
     "staffShell", "staffUserLabel", "staffLogoutBtn", "staffDateLabel", "staffDateNote", "staffTodayBtn", "staffFormTitle", "staffForm",
     "staffCancelEditBtn", "staffSubmitBtn", "staffListNote", "staffList",
     "riceShell", "riceUserLabel", "riceStockTabBtn", "riceReloadBtn", "riceBackBtn", "riceBillKicker", "riceBillForm", "ricePartyLabel",
-    "riceNetOut", "ricePaidLabel", "riceWalletLabel", "riceBillResetBtn", "riceBillPrintBtn", "riceBillSubmitBtn", "riceCalc",
+    "riceNetOut", "ricePaidLabel", "ricePriceLabel", "riceBillResetBtn", "riceBillPrintBtn", "riceBillSubmitBtn", "riceCalc",
     "riceDayTitle", "riceDayNote", "riceDayList", "riceMergeKicker", "riceMergeForm", "riceSources", "riceAddSourceBtn",
     "riceMergeResetBtn", "riceMergeSubmitBtn", "riceMergeSummary", "riceMergeNote", "riceMergeList",
     "riceSearch", "riceRange", "riceMonth", "riceKindFilter", "riceStatusFilter", "riceExportBtn", "riceListSummary", "riceTable",
@@ -3654,7 +3639,7 @@ function normalizeState(data) {
         range: data?.ui?.filters?.range === "all" ? "all" : "month",
         type: data?.ui?.filters?.type || "all",
         wallet: data?.ui?.filters?.wallet || "all",
-        category: data?.ui?.filters?.category || "all"
+        category: isRiceCategory(data?.ui?.filters?.category) ? "all" : (data?.ui?.filters?.category || "all")
       }
     },
     wallets: Array.isArray(data?.wallets) ? data.wallets : [],
@@ -3677,20 +3662,18 @@ function normalizeState(data) {
     name: textValue(category.name) || "หมวดหมู่",
     icon: textValue(category.icon) || "•",
     color: colorValue(category.color, "#fdd5e3")
-  }));
-  // หมวดเฉพาะของระบบซื้อ-ขายข้าว ต้องมีเสมอ (บิลที่ชำระแล้วลงบัญชีในหมวดนี้)
-  RICE_CATEGORIES.forEach((category) => {
-    if (!normalized.categories.some((item) => item.id === category.id)) normalized.categories.push({ ...category });
-  });
+  })).filter((category) => !isRiceCategory(category.id));
   normalized.budgets = normalized.budgets.map((budget) => ({
     id: budget.id || uid("budget"),
     name: textValue(budget.name) || "งบประมาณ",
     limit: numberValue(budget.limit),
     color: colorValue(budget.color, "#e8598f"),
-    categoryIds: Array.isArray(budget.categoryIds) ? budget.categoryIds : []
+    categoryIds: (Array.isArray(budget.categoryIds) ? budget.categoryIds : []).filter((categoryId) => !isRiceCategory(categoryId))
   }));
   const fallbackWalletId = normalized.wallets[0]?.id || "cash";
-  normalized.transactions = normalized.transactions.map((tx) => normalizeTransaction(tx, fallbackWalletId));
+  normalized.transactions = normalized.transactions
+    .filter((tx) => !isRiceCategory(tx.categoryId))
+    .map((tx) => normalizeTransaction(tx, fallbackWalletId));
   return normalized;
 }
 
@@ -4510,7 +4493,7 @@ function submitStaffForm(event) {
 }
 
 /* ---------- ซื้อ-ขายข้าว (แยกจากบัญชี: ข้อมูลอยู่ชีต MM_Rice หรือ localStorage ของตัวเอง) ----------
- * บิลที่ชำระแล้วสร้างธุรกรรมในหมวด "ซื้อข้าว/ขายข้าว" ให้อัตโนมัติ ผู้บริหารแก้/ลบธุรกรรมนั้นในสมุดบัญชีได้โดยตรง
+ * บิลข้าวไม่สร้างธุรกรรมบัญชีแล้ว ข้อมูลซื้อ-ขายอยู่แยกใน MM_Rice
  */
 
 function isRiceCategory(categoryId) {
@@ -4631,7 +4614,7 @@ function applyRiceResult(result) {
   renderRice();
 }
 
-// ธุรกรรมของบิลถูกเขียนลงสมุดบัญชีฝั่งเซิร์ฟเวอร์แล้ว ปรับ state ของผู้บริหารให้ตรงกันโดยไม่ต้องบันทึกซ้ำ
+// ถ้าแก้/ลบบิลเก่าที่เคยผูกธุรกรรมบัญชีไว้ ให้ state ของผู้บริหารล้างรายการเก่านั้นตามเซิร์ฟเวอร์
 function patchManagerFromRice(result) {
   if (!state || isStaffUser()) return;
   if (result.removedTxId) {
@@ -4666,21 +4649,27 @@ function riceRecord(id) {
 /* ----- คำนวณ (สูตรเดียวกับ riceCompute_ ใน Code.gs) ----- */
 
 function calcRiceNumbers(input) {
-  const grossKg = numberValue(input.grossKg);
-  const tareKg = numberValue(input.tareKg);
-  const moisture = numberValue(input.moisture);
-  const moistureStd = input.moistureStd === "" || input.moistureStd == null ? 15 : numberValue(input.moistureStd);
-  const impurity = numberValue(input.impurity);
-  const pricePerTon = numberValue(input.pricePerTon);
-  const otherDeduct = Math.max(0, numberValue(input.otherDeduct));
-  const netKg = Math.max(0, grossKg - tareKg);
-  const moistureKg = moisture > moistureStd && moistureStd < 100 ? netKg * (moisture - moistureStd) / (100 - moistureStd) : 0;
-  const impurityKg = (netKg - moistureKg) * Math.max(0, impurity) / 100;
-  const payKg = Math.max(0, Math.round(netKg - moistureKg - impurityKg));
-  const subtotal = Math.round(payKg / 1000 * pricePerTon * 100) / 100;
+  const legacyGross = numberValue(input.grossKg);
+  const legacyTare = numberValue(input.tareKg);
+  const payKg = Math.max(0, Math.round(numberValue(input.payKg) || Math.max(0, legacyGross - legacyTare)));
+  const pricePerKg = numberValue(input.pricePerKg) || (numberValue(input.pricePerTon) ? numberValue(input.pricePerTon) / 1000 : 0);
+  const pricePerTon = pricePerKg * 1000;
+  const subtotal = Math.round(payKg * pricePerKg * 100) / 100;
   return {
-    grossKg, tareKg, netKg, moisture, moistureStd, moistureKg: Math.round(moistureKg), impurity, impurityKg: Math.round(impurityKg),
-    payKg, pricePerTon, subtotal, otherDeduct, total: Math.max(0, Math.round((subtotal - otherDeduct) * 100) / 100)
+    grossKg: payKg,
+    tareKg: 0,
+    netKg: payKg,
+    moisture: 0,
+    moistureStd: 0,
+    moistureKg: 0,
+    impurity: 0,
+    impurityKg: 0,
+    payKg,
+    pricePerKg,
+    pricePerTon,
+    subtotal,
+    otherDeduct: 0,
+    total: subtotal
   };
 }
 
@@ -4703,24 +4692,23 @@ function computeRice(input) {
   }
 
   const n = calcRiceNumbers(input);
+  if (kind === "buy") record.note = "";
   record.party = textValue(input.party).slice(0, 120);
-  if (!record.party) throw new Error(kind === "buy" ? "กรุณาระบุชื่อผู้ขาย (ชาวนา)" : "กรุณาระบุชื่อผู้ซื้อ");
+  if (kind === "sell" && !record.party) throw new Error("กรุณาระบุชื่อผู้ซื้อ");
   if (!record.riceType) throw new Error("กรุณาระบุชนิดข้าว");
-  if (!(n.grossKg > 0)) throw new Error("กรุณาระบุน้ำหนักรถเข้า");
-  if (n.tareKg < 0 || n.tareKg >= n.grossKg) throw new Error("น้ำหนักรถออกต้องน้อยกว่าน้ำหนักรถเข้า");
-  if (n.moisture < 0 || n.moisture >= 100 || n.moistureStd < 0 || n.moistureStd >= 100) throw new Error("ค่าความชื้นไม่ถูกต้อง");
-  if (n.impurity < 0 || n.impurity >= 100) throw new Error("ค่าสิ่งเจือปนไม่ถูกต้อง");
-  if (!(n.pricePerTon > 0)) throw new Error("กรุณาระบุราคาต่อตัน");
-  const paid = input.paid === true || input.paid === "true";
+  if (!(n.payKg > 0)) throw new Error("กรุณาระบุน้ำหนักรวมข้าว");
+  if (!(n.pricePerKg > 0)) throw new Error(kind === "buy" ? "กรุณาระบุราคาซื้อบาทต่อกก." : "กรุณาระบุราคาขายบาทต่อกก.");
+  const paid = kind === "sell" && (input.paid === true || input.paid === "true");
   return {
     ...record,
     ...n,
-    phone: textValue(input.phone).slice(0, 40),
-    plate: textValue(input.plate).slice(0, 40),
-    otherNote: textValue(input.otherNote).slice(0, 120),
+    phone: "",
+    plate: "",
+    otherNote: "",
     paid,
     paidDate: paid ? (isDateKey(input.paidDate) ? input.paidDate : input.date) : "",
-    walletId: textValue(input.walletId)
+    walletId: "",
+    txId: ""
   };
 }
 
@@ -4765,7 +4753,6 @@ function localRiceRecords() {
 
 function localRiceSnapshot() {
   const all = localRiceRecords();
-  const book = normalizeState(loadState());
   const types = new Set();
   const parties = new Set();
   all.forEach((record) => {
@@ -4780,37 +4767,17 @@ function localRiceSnapshot() {
     records: all.filter((record) => !isStaffUser() || sameUser(record.createdBy, currentUsername())).map((record) => ({ ...record, canEdit: riceCanEdit(record) })),
     stock: riceStock(all),
     riceTypes: Array.from(types).sort(),
-    parties: Array.from(parties).sort(),
-    wallets: book.wallets.map((wallet) => ({ id: wallet.id, name: wallet.name }))
+    parties: Array.from(parties).sort()
   };
 }
 
-function syncLocalRiceTx(book, record, now) {
-  const index = record.txId ? book.transactions.findIndex((tx) => tx.id === record.txId) : -1;
-  if (record.kind === "merge" || !record.paid) {
-    const removedTxId = record.txId || "";
-    if (index >= 0) book.transactions.splice(index, 1);
-    record.txId = "";
-    return { tx: null, removedTxId };
-  }
-  const previous = index >= 0 ? book.transactions[index] : null;
-  const tx = normalizeTransaction({
-    id: previous?.id || uid("tx"),
-    type: record.kind === "buy" ? "expense" : "income",
-    date: record.paidDate || record.date,
-    amount: record.total,
-    walletId: record.walletId,
-    categoryId: record.kind === "buy" ? "cat_rice_buy" : "cat_rice_sell",
-    note: `${record.billNo} · ${record.riceType} ${record.payKg} กก. · ${record.party}`,
-    tags: ["ข้าว"],
-    createdAt: previous?.createdAt || now,
-    updatedAt: now,
-    createdBy: record.createdBy
-  }, record.walletId);
-  if (index >= 0) book.transactions[index] = tx;
-  else book.transactions.push(tx);
-  record.txId = tx.id;
-  return { tx, removedTxId: "" };
+function removeLocalRiceTransaction(txId) {
+  if (!txId) return "";
+  const book = normalizeState(loadState());
+  const before = book.transactions.length;
+  book.transactions = book.transactions.filter((tx) => tx.id !== txId);
+  if (book.transactions.length !== before) writeJsonStorage(STORAGE_KEY, book);
+  return txId;
 }
 
 Object.assign(localStaffApi, {
@@ -4824,36 +4791,29 @@ Object.assign(localStaffApi, {
     if (found && !riceCanEdit(found)) throw new Error("แก้ไขได้เฉพาะบิลของตัวเองที่บันทึกในวันนี้เท่านั้น");
     if (found && found.kind !== input.kind) throw new Error("เปลี่ยนประเภทบิลไม่ได้ กรุณาลบแล้วบันทึกใหม่");
     const record = computeRice(input);
-    const book = normalizeState(loadState());
-    if (record.kind !== "merge" && record.paid && !book.wallets.some((wallet) => wallet.id === record.walletId)) throw new Error("กรุณาเลือกบัญชีรับ/จ่ายเงิน");
     const now = new Date().toISOString();
+    const removedTxId = found?.txId ? removeLocalRiceTransaction(found.txId) : "";
     Object.assign(record, {
       id: found?.id || uid("rice"),
       billNo: found?.billNo || nextRiceBillNo(all, record.kind, record.date),
-      txId: found?.txId || "",
+      txId: "",
       createdAt: found?.createdAt || now,
       createdBy: found?.createdBy || currentUsername(),
       updatedAt: found ? now : ""
     });
-    const link = syncLocalRiceTx(book, record, now);
-    writeJsonStorage(STORAGE_KEY, book);
     writeJsonStorage(RICE_STORAGE_KEY, found ? all.map((item) => (item.id === record.id ? record : item)) : [...all, record]);
     scheduleGoogleSheetSync("rice");
-    return { ...localRiceSnapshot(), saved: record, tx: link.tx, removedTxId: link.removedTxId };
+    return { ...localRiceSnapshot(), saved: record, tx: null, removedTxId };
   },
   apiRiceDelete(id) {
     const all = localRiceRecords();
     const found = all.find((record) => record.id === id);
     if (!found) throw new Error("ไม่พบบิลนี้ อาจถูกลบไปแล้ว");
     if (!riceCanEdit(found)) throw new Error("ลบได้เฉพาะบิลของตัวเองที่บันทึกในวันนี้เท่านั้น");
-    if (found.txId) {
-      const book = normalizeState(loadState());
-      book.transactions = book.transactions.filter((tx) => tx.id !== found.txId);
-      writeJsonStorage(STORAGE_KEY, book);
-    }
+    const removedTxId = removeLocalRiceTransaction(found.txId);
     writeJsonStorage(RICE_STORAGE_KEY, all.filter((record) => record.id !== id));
     scheduleGoogleSheetSync("rice");
-    return { ...localRiceSnapshot(), removedTxId: found.txId || "" };
+    return { ...localRiceSnapshot(), removedTxId };
   }
 });
 
@@ -4867,18 +4827,6 @@ function tonText(value) {
   return `${(numberValue(value) / 1000).toLocaleString("th-TH", { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ตัน`;
 }
 
-function riceWallets() {
-  return rice.data?.wallets || [];
-}
-
-function fillRiceWalletOptions(select, keep) {
-  const wallets = riceWallets();
-  select.innerHTML = wallets.length
-    ? wallets.map((wallet) => `<option value="${escapeAttr(wallet.id)}">${escapeHtml(wallet.name)}</option>`).join("")
-    : `<option value="">ยังไม่มีบัญชี (ให้ผู้บริหารเพิ่ม)</option>`;
-  if (keep && wallets.some((wallet) => wallet.id === keep)) select.value = keep;
-}
-
 function renderRice() {
   const data = rice.data;
   const canManage = data ? Boolean(data.canManage) : !isStaffUser();
@@ -4889,7 +4837,6 @@ function renderRice() {
   const types = Array.from(new Set([...RICE_TYPE_PRESETS, ...(data?.riceTypes || [])]));
   dom.riceTypeList.innerHTML = types.map((type) => `<option value="${escapeAttr(type)}"></option>`).join("");
   dom.ricePartyList.innerHTML = (data?.parties || []).map((party) => `<option value="${escapeAttr(party)}"></option>`).join("");
-  fillRiceWalletOptions(dom.riceBillForm.elements.walletId, dom.riceBillForm.elements.walletId.value);
   updateRiceBillForm();
   renderRiceDay();
   updateRiceMergeSummary();
@@ -4900,16 +4847,17 @@ function renderRice() {
 
 function riceStatusBadge(record) {
   if (record.kind === "merge") return `<span class="badge badge-paid">สต็อก</span>`;
-  if (record.paid) return `<span class="badge badge-paid">${record.kind === "buy" ? "จ่ายแล้ว" : "รับเงินแล้ว"}</span>`;
-  return `<span class="badge badge-overdue">${record.kind === "buy" ? "ค้างจ่าย" : "ค้างรับ"}</span>`;
+  if (record.kind === "buy") return `<span class="badge badge-paid">สต็อกซื้อ</span>`;
+  if (record.paid) return `<span class="badge badge-paid">จ่ายแล้ว${record.paidDate ? ` · ${formatDate(record.paidDate)}` : ""}</span>`;
+  return `<span class="badge badge-overdue">ยังไม่จ่าย</span>`;
 }
 
 function riceActionsHtml(record) {
   const id = escapeAttr(record.id);
   const buttons = [`<button class="mini-btn" type="button" data-rice-action="print" data-id="${id}" title="พิมพ์บิล">⎙</button>`];
   if (record.canEdit) {
-    if (record.kind !== "merge") {
-      const label = record.paid ? "ยกเลิกสถานะชำระ" : record.kind === "buy" ? "บันทึกว่าจ่ายเงินแล้ว" : "บันทึกว่ารับเงินแล้ว";
+    if (record.kind === "sell") {
+      const label = record.paid ? "เปลี่ยนเป็นยังไม่จ่าย" : "บันทึกว่าจ่ายแล้ว";
       buttons.push(`<button class="mini-btn ok" type="button" data-rice-action="pay" data-id="${id}" title="${label}">${record.paid ? "↺" : "฿"}</button>`);
     }
     buttons.push(`<button class="mini-btn" type="button" data-rice-action="edit" data-id="${id}" title="แก้ไข">✎</button>`);
@@ -4922,7 +4870,12 @@ function riceItemHtml(record) {
   const meta = RICE_KIND_META[record.kind] || RICE_KIND_META.buy;
   const details = record.kind === "merge"
     ? [`รวม ${(record.sources || []).map((source) => escapeHtml(source.riceType)).join(" + ")}`, kgText(record.payKg)]
-    : [escapeHtml(record.party), kgText(record.payKg), `${money(record.pricePerTon)}/ตัน`, escapeHtml(record.plate)];
+    : [
+        record.kind === "sell" ? escapeHtml(record.party) : "",
+        kgText(record.payKg),
+        `${money(record.pricePerKg ?? (numberValue(record.pricePerTon) / 1000))}/กก.`,
+        record.kind === "sell" && record.paidDate ? `วันที่จ่าย ${formatDate(record.paidDate)}` : ""
+      ];
   if (!isStaffUser()) details.push(`<span class="by-user">โดย ${escapeHtml(userDisplayName(record.createdBy))}</span>`);
   return `
     <article class="transaction-item">
@@ -4957,6 +4910,8 @@ function readRiceBillForm() {
     phone: f.phone.value,
     plate: f.plate.value,
     riceType: f.riceType.value,
+    payKg: f.payKg.value,
+    pricePerKg: f.pricePerKg.value,
     grossKg: f.grossKg.value,
     tareKg: f.tareKg.value,
     moisture: f.moisture.value,
@@ -4965,7 +4920,7 @@ function readRiceBillForm() {
     pricePerTon: f.pricePerTon.value,
     otherDeduct: f.otherDeduct.value,
     otherNote: f.otherNote.value,
-    walletId: f.walletId.value,
+    walletId: "",
     paid: f.paid.checked,
     paidDate: f.paid.checked ? f.paidDate.value : "",
     note: f.note.value
@@ -4976,35 +4931,46 @@ function updateRiceBillForm() {
   const input = readRiceBillForm();
   const buy = input.kind === "buy";
   const f = dom.riceBillForm.elements;
-  dom.ricePartyLabel.textContent = buy ? "ชื่อผู้ขาย (ชาวนา)" : "ชื่อผู้ซื้อ (โรงสี / ลูกค้า)";
-  dom.ricePaidLabel.textContent = buy ? "จ่ายเงินให้ชาวนาแล้ว" : "ได้รับเงินจากผู้ซื้อแล้ว";
-  dom.riceWalletLabel.textContent = buy ? "จ่ายจากบัญชี" : "รับเข้าบัญชี";
-  f.walletId.disabled = !input.paid;
+  dom.ricePartyLabel.textContent = "ชื่อผู้ซื้อ";
+  dom.ricePriceLabel.textContent = buy ? "ราคาซื้อ (บาท/กก.)" : "ราคาขาย (บาท/กก.)";
+  dom.ricePaidLabel.textContent = "จ่ายแล้ว";
+  document.querySelectorAll("[data-rice-sell-only]").forEach((node) => node.classList.toggle("is-hidden", buy));
+  f.party.required = !buy;
+  f.paidDate.disabled = buy || !f.paid.checked;
+  if (buy) {
+    f.party.value = "";
+    f.note.value = "";
+    f.paid.checked = false;
+    f.paidDate.value = "";
+  } else if (f.paid.checked && !f.paidDate.value) {
+    f.paidDate.value = input.date || todayKey();
+  }
+  f.pricePerTon.value = numberValue(input.pricePerKg) ? numberValue(input.pricePerKg) * 1000 : "";
+  f.grossKg.value = input.payKg || "";
+  f.tareKg.value = "0";
+  f.moisture.value = "0";
+  f.moistureStd.value = "0";
+  f.impurity.value = "0";
+  f.otherDeduct.value = "0";
 
   const n = calcRiceNumbers(input);
-  dom.riceNetOut.textContent = kgText(n.netKg);
+  dom.riceNetOut.textContent = money(n.total);
   const lines = [
     receiptLine("ชนิดข้าว", escapeHtml(textValue(input.riceType) || "-")),
-    receiptLine(buy ? "ผู้ขาย" : "ผู้ซื้อ", escapeHtml(textValue(input.party) || "-")),
-    receiptLine("น้ำหนักรถเข้า", kgText(n.grossKg)),
-    receiptLine("น้ำหนักรถออก", `− ${kgText(n.tareKg)}`, "is-minus"),
-    receiptLine("น้ำหนักข้าวสุทธิ", kgText(n.netKg), "is-strong"),
-    receiptLine(`หักความชื้น ${n.moisture}% (เกณฑ์ ${n.moistureStd}%)`, `− ${kgText(n.moistureKg)}`, "is-minus"),
-    receiptLine(`หักสิ่งเจือปน ${n.impurity}%`, `− ${kgText(n.impurityKg)}`, "is-minus"),
-    receiptLine("น้ำหนักคิดเงิน", `${kgText(n.payKg)}`, "is-strong"),
-    receiptLine("", tonText(n.payKg)),
-    receiptLine("ราคาต่อตัน", money(n.pricePerTon)),
-    receiptLine("เป็นเงิน", money(n.subtotal), "is-strong")
+    ...(buy ? [] : [receiptLine("ผู้ซื้อ", escapeHtml(textValue(input.party) || "-"))]),
+    receiptLine("น้ำหนักรวมข้าว", kgText(n.payKg), "is-strong"),
+    receiptLine(buy ? "ราคาซื้อ/กก." : "ราคาขาย/กก.", money(n.pricePerKg)),
+    receiptLine("ราคาสุทธิ", money(n.total), "is-strong"),
+    ...(buy ? [] : [receiptLine("สถานะ", f.paid.checked ? `จ่ายแล้ว${f.paidDate.value ? ` (${formatDate(f.paidDate.value)})` : ""}` : "ยังไม่จ่าย")])
   ];
-  if (n.otherDeduct) lines.push(receiptLine(`หัก${escapeHtml(textValue(input.otherNote) || "อื่น ๆ")}`, `− ${money(n.otherDeduct)}`, "is-minus"));
   dom.riceCalc.innerHTML = `
     <div class="receipt-head">
-      <strong>${buy ? "ใบรับซื้อข้าว" : "ใบขายข้าว"}</strong>
+      <strong>${buy ? "สต็อกซื้อข้าว" : "รายการขายข้าว"}</strong>
       <small>${escapeHtml(input.billNo || "เลขที่บิลออกให้เมื่อบันทึก")} · ${formatDate(input.date) || "-"}</small>
     </div>
     <div class="receipt-lines">${lines.join("")}</div>
     <div class="receipt-total">
-      <span>${buy ? "ยอดจ่ายชาวนาสุทธิ" : "ยอดรับจากผู้ซื้อสุทธิ"}</span>
+      <span>ราคาสุทธิ</span>
       <strong>${money(n.total)}</strong>
       <small>${bahtText(n.total)}</small>
     </div>
@@ -5014,14 +4980,12 @@ function updateRiceBillForm() {
 function resetRiceBillForm() {
   const form = dom.riceBillForm;
   const kind = form.elements.kind.value || "buy";
-  const wallet = form.elements.walletId.value;
   form.reset();
   form.elements.id.value = "";
   form.elements.paidDate.value = "";
   form.querySelectorAll('input[name="kind"]').forEach((radio) => { radio.disabled = false; });
   form.querySelector(`input[name="kind"][value="${kind}"]`).checked = true;
   form.elements.date.value = todayKey();
-  fillRiceWalletOptions(form.elements.walletId, wallet);
   dom.riceBillKicker.textContent = "บิลใหม่";
   dom.riceBillSubmitBtn.textContent = "บันทึกบิล";
   updateRiceBillForm();
@@ -5035,11 +4999,12 @@ function fillRiceBillForm(record) {
     radio.checked = radio.value === record.kind;
     radio.disabled = radio.value !== record.kind;
   });
-  ["id", "date", "billNo", "party", "phone", "plate", "riceType", "grossKg", "tareKg", "moisture", "moistureStd", "impurity", "pricePerTon", "otherNote", "note", "paidDate"]
+  ["id", "date", "billNo", "party", "phone", "plate", "riceType", "payKg", "pricePerKg", "grossKg", "tareKg", "moisture", "moistureStd", "impurity", "pricePerTon", "otherNote", "note", "paidDate"]
     .forEach((name) => { f[name].value = record[name] ?? ""; });
+  if (!f.payKg.value) f.payKg.value = record.payKg ?? "";
+  if (!f.pricePerKg.value) f.pricePerKg.value = record.pricePerKg ?? (numberValue(record.pricePerTon) ? numberValue(record.pricePerTon) / 1000 : "");
   f.otherDeduct.value = record.otherDeduct || "";
   f.paid.checked = Boolean(record.paid);
-  fillRiceWalletOptions(f.walletId, record.walletId);
   dom.riceBillKicker.textContent = `แก้ไขบิล ${record.billNo}`;
   dom.riceBillSubmitBtn.textContent = "บันทึกการแก้ไข";
   updateRiceBillForm();
@@ -5049,7 +5014,6 @@ function submitRiceBill(print) {
   const input = readRiceBillForm();
   try {
     computeRice(input);
-    if (input.paid && !input.walletId) throw new Error("กรุณาเลือกบัญชีรับ/จ่ายเงิน (ให้ผู้บริหารเพิ่มบัญชีก่อน)");
   } catch (error) {
     toast(error.message);
     return;
@@ -5090,7 +5054,7 @@ function editRiceRecord(id) {
 
 function deleteRiceRecord(id) {
   const record = riceRecord(id);
-  if (!record || !confirm(`ลบ${RICE_KIND_LABELS[record.kind]} ${record.billNo} หรือไม่?${record.txId ? "\nรายการเงินที่ลงบัญชีไว้จะถูกลบด้วย" : ""}`)) return;
+  if (!record || !confirm(`ลบ${RICE_KIND_LABELS[record.kind]} ${record.billNo} หรือไม่?${record.txId ? "\nธุรกรรมบัญชีเก่าที่เคยผูกไว้จะถูกลบด้วย" : ""}`)) return;
   dom.riceShell.classList.add("is-busy");
   callApi("apiRiceDelete", id)
     .then((result) => {
@@ -5105,18 +5069,13 @@ function deleteRiceRecord(id) {
 
 function toggleRicePaid(id) {
   const record = riceRecord(id);
-  if (!record || record.kind === "merge") return;
+  if (!record || record.kind !== "sell") return;
   const paying = !record.paid;
-  const walletId = record.walletId || riceWallets()[0]?.id || "";
-  if (paying && !walletId) {
-    toast("ยังไม่มีบัญชีเงิน กรุณาให้ผู้บริหารเพิ่มบัญชีก่อน");
-    return;
-  }
   const question = paying
-    ? `${record.kind === "buy" ? "บันทึกว่าจ่ายเงิน" : "บันทึกว่ารับเงิน"} ${money(record.total)} ของ ${record.billNo} วันนี้หรือไม่?`
-    : `ยกเลิกสถานะชำระของ ${record.billNo} หรือไม่? รายการเงินที่ลงบัญชีไว้จะถูกลบ`;
+    ? `บันทึกว่าผู้ซื้อจ่ายเงิน ${money(record.total)} ของ ${record.billNo} วันนี้หรือไม่?`
+    : `เปลี่ยน ${record.billNo} เป็นยังไม่จ่ายหรือไม่?`;
   if (!confirm(question)) return;
-  saveRiceRecord({ ...record, walletId, paid: paying, paidDate: paying ? todayKey() : "" }, paying ? "บันทึกการชำระเงินแล้ว" : "ยกเลิกสถานะชำระแล้ว");
+  saveRiceRecord({ ...record, paid: paying, paidDate: paying ? todayKey() : "" }, paying ? "บันทึกว่าจ่ายแล้ว" : "เปลี่ยนเป็นยังไม่จ่ายแล้ว");
 }
 
 function renderRiceDay() {
@@ -5268,7 +5227,7 @@ function filteredRiceRecords() {
   return riceRecords()
     .filter((record) => f.range === "all" || monthKey(record.date) === f.month)
     .filter((record) => f.kind === "all" || record.kind === f.kind)
-    .filter((record) => f.status === "all" || (record.kind !== "merge" && (f.status === "paid") === Boolean(record.paid)))
+    .filter((record) => f.status === "all" || (record.kind === "sell" && (f.status === "paid") === Boolean(record.paid)))
     .filter((record) => !query || [record.billNo, record.party, record.plate, record.phone, record.riceType, record.note]
       .some((value) => String(value || "").toLowerCase().includes(query)))
     .sort((a, b) => `${b.date}${b.createdAt}`.localeCompare(`${a.date}${a.createdAt}`));
@@ -5297,12 +5256,12 @@ function renderRiceList() {
           <tr>
             <td><b>${formatDate(record.date)}</b><small>${escapeHtml(record.billNo)}</small></td>
             <td><span class="kind-badge kind-${record.kind}">${RICE_KIND_LABELS[record.kind]}</span></td>
-            <td>${escapeHtml(record.party || "-")}<small>${escapeHtml([record.plate, record.phone].filter(Boolean).join(" · "))}</small></td>
+            <td>${record.kind === "sell" ? escapeHtml(record.party || "-") : "-"}</td>
             <td>${escapeHtml(record.riceType)}<small>${merge
               ? `จาก ${(record.sources || []).map((source) => escapeHtml(source.riceType)).join(" + ")}`
-              : `ความชื้น ${numberValue(record.moisture)}% · สุทธิ ${kgText(record.netKg)}`}</small></td>
+              : record.kind === "buy" ? "สต็อกซื้อ" : (record.paidDate ? `วันที่จ่าย ${formatDate(record.paidDate)}` : "")}</small></td>
             <td class="num">${kgText(record.payKg)}<small>${tonText(record.payKg)}</small></td>
-            <td class="num">${merge ? "-" : money(record.pricePerTon)}</td>
+            <td class="num">${merge ? "-" : money(record.pricePerKg ?? (numberValue(record.pricePerTon) / 1000))}</td>
             <td class="num"><b>${merge ? "-" : money(record.total)}</b></td>
             <td>${riceStatusBadge(record)}</td>
             <td>${riceActionsHtml(record)}</td>
@@ -5314,14 +5273,13 @@ function renderRiceList() {
 
 function exportRiceCsv() {
   const items = filteredRiceRecords();
-  const headers = ["วันที่", "เลขที่บิล", "ประเภท", "คู่ค้า", "โทร", "ทะเบียนรถ", "ชนิดข้าว", "น้ำหนักรถเข้า", "น้ำหนักรถออก", "น้ำหนักสุทธิ",
-    "ความชื้น%", "หักความชื้น(กก.)", "สิ่งเจือปน%", "หักสิ่งเจือปน(กก.)", "น้ำหนักคิดเงิน(กก.)", "ราคา/ตัน", "เป็นเงิน", "หักอื่นๆ", "ยอดสุทธิ", "สถานะ", "ผู้บันทึก", "หมายเหตุ"];
+  const headers = ["วันที่", "เลขที่บิล", "ประเภท", "ผู้ซื้อ", "ชนิดข้าว", "น้ำหนักรวม(กก.)", "ราคา/กก.", "ราคาสุทธิ", "สถานะ", "วันที่จ่าย", "ผู้บันทึก", "หมายเหตุ"];
   const rows = items.map((record) => [
-    record.date, record.billNo, RICE_KIND_LABELS[record.kind], record.party, record.phone, record.plate,
+    record.date, record.billNo, RICE_KIND_LABELS[record.kind], record.kind === "sell" ? record.party : "",
     record.kind === "merge" ? `${record.riceType} (จาก ${(record.sources || []).map((source) => `${source.riceType} ${source.kg}`).join(" + ")})` : record.riceType,
-    record.grossKg ?? "", record.tareKg ?? "", record.netKg ?? "", record.moisture ?? "", record.moistureKg ?? "", record.impurity ?? "", record.impurityKg ?? "",
-    record.payKg, record.pricePerTon ?? "", record.subtotal ?? "", record.otherDeduct ?? "", record.total,
-    record.kind === "merge" ? "" : record.paid ? "ชำระแล้ว" : "ค้างชำระ", userDisplayName(record.createdBy), record.note
+    record.payKg, record.kind === "merge" ? "" : (record.pricePerKg ?? (numberValue(record.pricePerTon) / 1000)), record.kind === "merge" ? "" : record.total,
+    record.kind === "merge" ? "" : record.kind === "buy" ? "สต็อกซื้อ" : record.paid ? "จ่ายแล้ว" : "ยังไม่จ่าย",
+    record.kind === "sell" ? record.paidDate : "", userDisplayName(record.createdBy), record.note
   ]);
   const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
   downloadBlob(`﻿${csv}`, `rice-bills-${rice.filters.range === "all" ? "all" : rice.filters.month}.csv`, "text/csv;charset=utf-8");
@@ -5338,50 +5296,59 @@ function renderRiceStock() {
   const aggregate = (list) => {
     const kg = list.reduce((sum, record) => sum + numberValue(record.payKg), 0);
     const amount = list.reduce((sum, record) => sum + numberValue(record.total), 0);
-    return { count: list.length, kg, amount, avg: kg ? amount / (kg / 1000) : 0 };
+    return { count: list.length, kg, amount, avg: kg ? amount / kg : 0 };
   };
   const buy = aggregate(monthRecords.filter((record) => record.kind === "buy"));
   const sell = aggregate(monthRecords.filter((record) => record.kind === "sell"));
   const stock = rice.data?.stock || [];
   const stockKg = stock.reduce((sum, item) => sum + item.balanceKg, 0);
-  const owe = records.filter((record) => record.kind === "buy" && !record.paid);
+  const allBuy = aggregate(records.filter((record) => record.kind === "buy"));
   const due = records.filter((record) => record.kind === "sell" && !record.paid);
   const sumTotal = (list) => list.reduce((sum, record) => sum + numberValue(record.total), 0);
   const tile = (className, label, value, note) => `<article class="stat-tile ${className}"><span>${label}</span><strong>${value}</strong><small>${note}</small></article>`;
   dom.riceStats.innerHTML = [
-    tile("stat-rice-buy", "รับซื้อเดือนนี้", money(buy.amount), `${tonText(buy.kg)} · ${buy.count} บิล · เฉลี่ย ${money(buy.avg)}/ตัน`),
-    tile("stat-rice-sell", "ขายออกเดือนนี้", money(sell.amount), `${tonText(sell.kg)} · ${sell.count} บิล · เฉลี่ย ${money(sell.avg)}/ตัน`),
-    tile("stat-rice-net", "ส่วนต่างขาย − ซื้อ", signedMoney(sell.amount - buy.amount), sell.avg && buy.avg ? `ส่วนต่างราคาเฉลี่ย ${signedMoney(sell.avg - buy.avg)}/ตัน` : "ยอดขายหักยอดซื้อของเดือนนี้"),
+    tile("stat-rice-buy", "รับซื้อเดือนนี้", money(buy.amount), `${kgText(buy.kg)} · ${buy.count} บิล · เฉลี่ย ${money(buy.avg)}/กก.`),
+    tile("stat-rice-sell", "ขายออกเดือนนี้", money(sell.amount), `${kgText(sell.kg)} · ${sell.count} บิล · เฉลี่ย ${money(sell.avg)}/กก.`),
+    tile("stat-rice-net", "ส่วนต่างขาย − ซื้อ", signedMoney(sell.amount - buy.amount), sell.avg && buy.avg ? `ส่วนต่างราคาเฉลี่ย ${signedMoney(sell.avg - buy.avg)}/กก.` : "ยอดขายหักยอดซื้อของเดือนนี้"),
     tile("stat-rice-stock", "สต็อกข้าวคงเหลือ", tonText(stockKg), `${stock.filter((item) => item.balanceKg > 0).length} ชนิด/กอง · ${kgText(stockKg)}`),
-    tile("stat-rice-owe", "ค้างจ่ายชาวนา", money(sumTotal(owe)), `${owe.length} บิล (ทุกเดือน)`),
+    tile("stat-rice-owe", "รับซื้อสะสม", money(allBuy.amount), `${kgText(allBuy.kg)} · ${allBuy.count} บิล (ทุกเดือน)`),
     tile("stat-rice-due", "ค้างรับจากผู้ซื้อ", money(sumTotal(due)), `${due.length} บิล (ทุกเดือน)`)
   ].join("");
 
-  const stockTotal = stock.reduce((acc, item) => ({
-    buyKg: acc.buyKg + item.buyKg, sellKg: acc.sellKg + item.sellKg, mergeInKg: acc.mergeInKg + item.mergeInKg, mergeOutKg: acc.mergeOutKg + item.mergeOutKg
-  }), { buyKg: 0, sellKg: 0, mergeInKg: 0, mergeOutKg: 0 });
-  dom.riceStockTable.innerHTML = stock.length
-    ? stock.map((item) => `
+  const buyGroups = Array.from(records.filter((record) => record.kind === "buy").reduce((map, record) => {
+    const price = numberValue(record.pricePerKg ?? (numberValue(record.pricePerTon) / 1000));
+    const key = `${record.riceType}__${price}`;
+    if (!map.has(key)) map.set(key, { riceType: record.riceType, pricePerKg: price, kg: 0, amount: 0 });
+    const row = map.get(key);
+    row.kg += numberValue(record.payKg);
+    row.amount += numberValue(record.total);
+    return map;
+  }, new Map()).values()).sort((a, b) => a.riceType.localeCompare(b.riceType, "th") || a.pricePerKg - b.pricePerKg);
+  const buyGroupTotal = buyGroups.reduce((sum, item) => ({ kg: sum.kg + item.kg, amount: sum.amount + item.amount }), { kg: 0, amount: 0 });
+  dom.riceStockTable.innerHTML = buyGroups.length
+    ? buyGroups.map((item) => `
         <tr>
           <td>${escapeHtml(item.riceType)}</td>
-          <td class="num">${kgText(item.buyKg)}</td>
-          <td class="num">${kgText(item.sellKg)}</td>
-          <td class="num">+${kgText(item.mergeInKg)} / −${kgText(item.mergeOutKg)}</td>
-          <td class="num"><b class="${item.balanceKg < 0 ? "expense-text" : ""}">${kgText(item.balanceKg)}</b><small>${tonText(item.balanceKg)}</small></td>
+          <td class="num">${money(item.pricePerKg)}</td>
+          <td class="num">${kgText(item.kg)}<small>${tonText(item.kg)}</small></td>
+          <td class="num"><b>${money(item.amount)}</b></td>
         </tr>
       `).join("") + `
         <tr class="rice-total-row">
           <td>รวมทุกชนิด</td>
-          <td class="num">${kgText(stockTotal.buyKg)}</td>
-          <td class="num">${kgText(stockTotal.sellKg)}</td>
-          <td class="num">+${kgText(stockTotal.mergeInKg)} / −${kgText(stockTotal.mergeOutKg)}</td>
-          <td class="num">${kgText(stockKg)}<small>${tonText(stockKg)}</small></td>
+          <td></td>
+          <td class="num">${kgText(buyGroupTotal.kg)}<small>${tonText(buyGroupTotal.kg)}</small></td>
+          <td class="num">${money(buyGroupTotal.amount)}</td>
         </tr>`
-    : `<tr><td colspan="5"><div class="empty-state">ยังไม่มีสต็อก</div></td></tr>`;
+    : `<tr><td colspan="4"><div class="empty-state">ยังไม่มีสต็อกซื้อข้าว</div></td></tr>`;
 
-  const unpaid = [...owe, ...due].sort((a, b) => a.date.localeCompare(b.date));
-  dom.riceUnpaidNote.textContent = unpaid.length ? `ค้างจ่าย ${money(sumTotal(owe))} · ค้างรับ ${money(sumTotal(due))}` : "ไม่มีบิลค้างชำระ";
-  dom.riceUnpaidList.innerHTML = unpaid.length ? unpaid.map(riceItemHtml).join("") : `<div class="empty-state">ชำระครบทุกบิลแล้ว</div>`;
+  const sells = records.filter((record) => record.kind === "sell").sort((a, b) => `${b.date}${b.createdAt}`.localeCompare(`${a.date}${a.createdAt}`));
+  const paidSell = sells.filter((record) => record.paid);
+  const unpaidSell = sells.filter((record) => !record.paid);
+  dom.riceUnpaidNote.textContent = sells.length
+    ? `${sells.length} รายการ · จ่ายแล้ว ${paidSell.length} · ยังไม่จ่าย ${unpaidSell.length} · ค้าง ${money(sumTotal(unpaidSell))}`
+    : "ยังไม่มีรายการขายข้าว";
+  dom.riceUnpaidList.innerHTML = sells.length ? sells.map(riceItemHtml).join("") : `<div class="empty-state">ยังไม่มีรายการขายข้าว</div>`;
 
   const byType = new Map();
   monthRecords.filter((record) => record.kind !== "merge").forEach((record) => {
@@ -5396,10 +5363,10 @@ function renderRiceStock() {
         return `
           <tr>
             <td>${escapeHtml(type)}</td>
-            <td class="num">${tonText(b.kg)}</td>
+            <td class="num">${kgText(b.kg)}</td>
             <td class="num">${money(b.amount)}</td>
             <td class="num">${b.kg ? money(b.avg) : "-"}</td>
-            <td class="num">${tonText(s.kg)}</td>
+            <td class="num">${kgText(s.kg)}</td>
             <td class="num">${money(s.amount)}</td>
             <td class="num">${s.kg ? money(s.avg) : "-"}</td>
           </tr>
@@ -5423,20 +5390,14 @@ function printRiceBill(record) {
         [`ได้กอง ${escapeHtml(record.riceType)}`, `${kgText(record.payKg)} (${tonText(record.payKg)})`]
       ]
     : [
-        ["น้ำหนักรถเข้า", kgText(record.grossKg)],
-        ["น้ำหนักรถออก", `− ${kgText(record.tareKg)}`],
-        ["น้ำหนักข้าวสุทธิ", kgText(record.netKg)],
-        [`หักความชื้น ${numberValue(record.moisture)}% (เกณฑ์ ${numberValue(record.moistureStd)}%)`, `− ${kgText(record.moistureKg)}`],
-        [`หักสิ่งเจือปน ${numberValue(record.impurity)}%`, `− ${kgText(record.impurityKg)}`],
-        ["น้ำหนักคิดเงิน", `${kgText(record.payKg)} (${tonText(record.payKg)})`],
-        ["ราคาต่อตัน", money(record.pricePerTon)],
-        ["เป็นเงิน", money(record.subtotal)],
-        ...(numberValue(record.otherDeduct) ? [[`หัก${escapeHtml(record.otherNote || "อื่น ๆ")}`, `− ${money(record.otherDeduct)}`]] : [])
+        ["น้ำหนักรวมข้าว", `${kgText(record.payKg)} (${tonText(record.payKg)})`],
+        [buy ? "ราคาซื้อ/กก." : "ราคาขาย/กก.", money(record.pricePerKg ?? (numberValue(record.pricePerTon) / 1000))],
+        ["ราคาสุทธิ", money(record.total)]
       ];
   const status = record.paid
-    ? `${buy ? "จ่ายเงินแล้ว" : "รับเงินแล้ว"}${record.paidDate ? ` (${formatDate(record.paidDate)})` : ""}`
-    : "ค้างชำระ";
-  const signs = merge ? ["ผู้ดำเนินการ", "ผู้ตรวจสอบ", "ผู้อนุมัติ"] : buy ? ["ผู้ชั่ง / ผู้บันทึก", "ผู้ขาย (ผู้รับเงิน)", "ผู้จ่ายเงิน"] : ["ผู้ชั่ง / ผู้บันทึก", "ผู้ซื้อ (ผู้รับของ)", "ผู้รับเงิน"];
+    ? `จ่ายแล้ว${record.paidDate ? ` (${formatDate(record.paidDate)})` : ""}`
+    : "ยังไม่จ่าย";
+  const signs = merge ? ["ผู้ดำเนินการ", "ผู้ตรวจสอบ", "ผู้อนุมัติ"] : buy ? ["ผู้บันทึก", "ผู้ตรวจสอบ", "ผู้อนุมัติ"] : ["ผู้บันทึก", "ผู้ซื้อ", "ผู้รับเงิน"];
   dom.ricePrint.innerHTML = `
     <div class="bill-doc">
       <div class="bill-doc-head">
@@ -5451,9 +5412,9 @@ function printRiceBill(record) {
         </div>
       </div>
       <div class="bill-doc-meta">
-        ${merge ? "" : `<div>${buy ? "ผู้ขาย" : "ผู้ซื้อ"}: <b>${escapeHtml(record.party)}</b></div><div>โทร: ${escapeHtml(record.phone || "-")}</div><div>ทะเบียนรถ: ${escapeHtml(record.plate || "-")}</div>`}
+        ${merge || buy ? "" : `<div>ผู้ซื้อ: <b>${escapeHtml(record.party)}</b></div>`}
         <div>ชนิดข้าว: <b>${escapeHtml(record.riceType)}</b></div>
-        ${merge ? "" : `<div>สถานะ: <b>${status}</b></div>`}
+        ${merge || buy ? "" : `<div>สถานะ: <b>${status}</b></div>`}
         <div>ผู้บันทึก: ${escapeHtml(userDisplayName(record.createdBy) || "-")}</div>
       </div>
       <table>
@@ -7507,6 +7468,10 @@ function normalizeBackupRiceRecords(records) {
     let id = textValue(record.id) || uid("rice");
     if (used.has(id)) id = `${id}_${index + 1}`;
     used.add(id);
+    const payKg = Math.round(numberValue(record.payKg));
+    const pricePerKg = numberValue(record.pricePerKg) || (numberValue(record.pricePerTon) ? numberValue(record.pricePerTon) / 1000 : 0);
+    const total = numberValue(record.total) || Math.round(payKg * pricePerKg * 100) / 100;
+    const paid = kind === "sell" && (record.paid === true || String(record.paid).toLowerCase() === "true");
     const normalized = {
       ...record,
       id,
@@ -7514,10 +7479,29 @@ function normalizeBackupRiceRecords(records) {
       date: isDateKey(record.date) ? record.date : todayKey(),
       billNo: textValue(record.billNo) || `${RICE_PREFIX[kind]}${String(index + 1).padStart(3, "0")}`,
       riceType: textValue(record.riceType),
-      payKg: Math.round(numberValue(record.payKg)),
-      total: numberValue(record.total),
-      paid: record.paid === true || String(record.paid).toLowerCase() === "true",
-      txId: textValue(record.txId),
+      party: kind === "sell" ? textValue(record.party).slice(0, 120) : "",
+      phone: "",
+      plate: "",
+      payKg,
+      grossKg: payKg,
+      tareKg: 0,
+      netKg: payKg,
+      moisture: 0,
+      moistureStd: 0,
+      moistureKg: 0,
+      impurity: 0,
+      impurityKg: 0,
+      pricePerKg,
+      pricePerTon: pricePerKg * 1000,
+      subtotal: total,
+      otherDeduct: 0,
+      otherNote: "",
+      total,
+      paid,
+      paidDate: paid && isDateKey(record.paidDate) ? record.paidDate : "",
+      walletId: "",
+      txId: "",
+      note: kind === "buy" ? "" : textValue(record.note).slice(0, 500),
       createdAt: record.createdAt || new Date().toISOString(),
       updatedAt: record.updatedAt || "",
       createdBy: textValue(record.createdBy) || currentUsername() || DEFAULT_USERNAME

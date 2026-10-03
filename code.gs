@@ -24,11 +24,6 @@ const MM_MANAGER_ROLES = ['admin', 'manager'];
 const MM_STAFF_TYPES = ['income', 'expense'];
 // หน้าพนักงานเข้าได้โดยไม่ต้องล็อกอิน: รายการที่กรอกจะบันทึก CreatedBy เป็น username นี้
 const MM_GUEST_USER = 'guest';
-// ซื้อ-ขายข้าว: บิลที่ชำระแล้วจะสร้างธุรกรรมในหมวดเฉพาะเหล่านี้ (รหัสคงที่ ห้ามลบ)
-const MM_RICE_CATEGORIES = [
-  { id: 'cat_rice_buy', type: 'expense', name: 'ซื้อข้าว', icon: '🌾', color: '#fff0b3' },
-  { id: 'cat_rice_sell', type: 'income', name: 'ขายข้าว', icon: '🚚', color: '#d3f3dc' }
-];
 const MM_RICE_KINDS = ['buy', 'sell', 'merge'];
 const MM_RICE_PREFIX = { buy: 'B', sell: 'S', merge: 'M' };
 
@@ -95,7 +90,6 @@ function doPost(e) {
     ensureSheetStructure_();
     ensureDefaultAdmin_();
     saveBookState_(MM_DEFAULT_USER, imported.state, null);
-    ensureRiceCategories_();
     replaceRiceRecords_(imported.riceRecords);
     logAudit_(MM_DEFAULT_USER, 'publicSync', 'Saved from GitHub Pages: ' + imported.state.transactions.length + ' transactions, ' + imported.riceRecords.length + ' rice records');
     return jsonOutput_({
@@ -455,7 +449,6 @@ function apiImportBackup(token, backup) {
     ensureSheetStructure_();
     ensureRiceSheet_();
     saveBookState_(user.username, payload.state, null);
-    ensureRiceCategories_();
     replaceRiceRecords_(payload.riceRecords);
     logAudit_(user.username, 'importBackup', 'Imported ' + payload.state.transactions.length + ' transactions, ' + payload.riceRecords.length + ' rice records');
     return {
@@ -513,16 +506,39 @@ function normalizeImportedRiceRecords_(records) {
     let id = clean_(input.id, 120) || ('rice_import_' + Utilities.getUuid().replace(/-/g, '').slice(0, 16));
     if (used[id]) id = id + '_' + (index + 1);
     used[id] = true;
+    const payKg = Math.round(number_(input.payKg));
+    const pricePerKg = number_(input.pricePerKg) || (number_(input.pricePerTon) ? number_(input.pricePerTon) / 1000 : 0);
+    const total = number_(input.total) || Math.round(payKg * pricePerKg * 100) / 100;
+    const paid = kind === 'sell' && (input.paid === true || String(input.paid).toLowerCase() === 'true');
     const record = Object.assign({}, input, {
       id: id,
       kind: kind,
       date: date,
       billNo: clean_(input.billNo, 80) || (MM_RICE_PREFIX[kind] + String(index + 1).padStart(3, '0')),
       riceType: clean_(input.riceType, 80),
-      payKg: Math.round(number_(input.payKg)),
-      total: number_(input.total),
-      paid: input.paid === true || String(input.paid).toLowerCase() === 'true',
-      txId: clean_(input.txId, 120),
+      party: kind === 'sell' ? clean_(input.party, 120) : '',
+      phone: '',
+      plate: '',
+      payKg: payKg,
+      grossKg: payKg,
+      tareKg: 0,
+      netKg: payKg,
+      moisture: 0,
+      moistureStd: 0,
+      moistureKg: 0,
+      impurity: 0,
+      impurityKg: 0,
+      pricePerKg: pricePerKg,
+      pricePerTon: pricePerKg * 1000,
+      subtotal: total,
+      otherDeduct: 0,
+      otherNote: '',
+      total: total,
+      paid: paid,
+      paidDate: paid && isDateKey_(input.paidDate) ? String(input.paidDate) : '',
+      walletId: '',
+      txId: '',
+      note: kind === 'buy' ? '' : clean_(input.note, 500),
       createdAt: clean_(input.createdAt, 40) || new Date().toISOString(),
       updatedAt: clean_(input.updatedAt, 40),
       createdBy: clean_(input.createdBy, 80) || userOrDefault_(input.createdBy)
@@ -671,9 +687,10 @@ function findBookTransactionRow_(sh, id) {
   return null;
 }
 
-/* ---------- ซื้อ-ขายข้าว: บิลรับซื้อ/ขายออก และการรวมข้าว (ชีต MM_Rice แยกจากบัญชี) ----------
- * - บิลรับซื้อ/ขายออก: ชั่งรถเข้า-ออก หักความชื้นเกินมาตรฐานและสิ่งเจือปน คิดราคาเป็นบาท/ตัน
- * - บิลที่ "ชำระแล้ว" จะสร้างธุรกรรมในหมวดซื้อข้าว/ขายข้าว (ลิงก์ด้วย TxID) บิลค้างชำระยังไม่กระทบยอดเงิน
+/* ---------- ซื้อ-ขายข้าว: บันทึกสต็อกแยกจากบัญชีรายรับรายจ่าย ----------
+ * - รับซื้อ: เก็บชนิดข้าว น้ำหนักรวม และราคาซื้อบาท/กก.
+ * - ขายออก: เก็บผู้ซื้อ น้ำหนักรวม ราคาขายบาท/กก. ราคาสุทธิ สถานะจ่าย และวันที่จ่าย
+ * - ข้อมูลซื้อ-ขายข้าวไม่สร้างธุรกรรมในบัญชีรายรับรายจ่าย
  * - รวมข้าว: ย้ายสต็อกข้าวหลายชนิด/หลายกองมารวมเป็นกองเดียว ไม่กระทบยอดเงิน
  * พนักงาน (รวมที่ไม่ได้ล็อกอิน) เห็นเฉพาะบิลของตัวเอง แก้/ลบได้เฉพาะที่บันทึกวันนี้ ผู้บริหารเห็นและแก้ได้ทุกบิล
  */
@@ -688,11 +705,10 @@ function apiRiceSave(token, input) {
   input = input || {};
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
-  let link;
+  let removedTxId = '';
   let record;
   try {
     const sh = ensureRiceSheet_();
-    ensureRiceCategories_();
     const id = clean_(input.id, 120);
     const found = id ? findRiceRow_(sh, id) : null;
     if (id && !found) throw new Error('ไม่พบบิลนี้ อาจถูกลบไปแล้ว');
@@ -700,19 +716,15 @@ function apiRiceSave(token, input) {
     if (found && found.record.kind !== String(input.kind)) throw new Error('เปลี่ยนประเภทบิลไม่ได้ กรุณาลบแล้วบันทึกใหม่');
 
     record = riceCompute_(input);
-    if (record.kind !== 'merge' && record.paid &&
-      !rowsForUser_(MM_SHEETS.WALLETS, MM_BOOK).some(function (r) { return String(r[1]) === record.walletId; })) {
-      throw new Error('กรุณาเลือกบัญชีรับ/จ่ายเงิน');
-    }
     const now = new Date().toISOString();
     record.id = found ? found.record.id : 'rice_' + Utilities.getUuid().replace(/-/g, '').slice(0, 16);
     record.billNo = found ? found.record.billNo : nextRiceBillNo_(riceRecords_(), record.kind, record.date);
-    record.txId = found ? found.record.txId : '';
+    removedTxId = found && found.record.txId ? removeRiceTransaction_(found.record.txId) : '';
+    record.txId = '';
     record.createdAt = found ? found.record.createdAt : now;
     record.createdBy = found ? found.record.createdBy : user.username;
     record.updatedAt = found ? now : '';
 
-    link = syncRiceTx_(record, now);
     if (found) sh.getRange(found.row, 1, 1, MM_HEADERS[MM_SHEETS.RICE].length).setValues([riceRow_(record)]);
     else appendRows_(MM_SHEETS.RICE, [riceRow_(record)]);
     logAudit_(user.username, found ? 'riceUpdate' : 'riceAdd', record.billNo);
@@ -721,8 +733,8 @@ function apiRiceSave(token, input) {
   }
   const result = riceSnapshot_(user);
   result.saved = record;
-  result.tx = link.tx;
-  result.removedTxId = link.removedTxId;
+  result.tx = null;
+  result.removedTxId = removedTxId;
   return result;
 }
 
@@ -736,12 +748,7 @@ function apiRiceDelete(token, id) {
     const found = findRiceRow_(sh, clean_(id, 120));
     if (!found) throw new Error('ไม่พบบิลนี้ อาจถูกลบไปแล้ว');
     if (!riceCanEdit_(user, found.record)) throw new Error('ลบได้เฉพาะบิลของตัวเองที่บันทึกในวันนี้เท่านั้น');
-    if (found.record.txId) {
-      const txSheet = getSheet_(MM_SHEETS.TRANSACTIONS);
-      const tx = findBookTransactionRow_(txSheet, found.record.txId);
-      if (tx) txSheet.deleteRow(tx.row);
-      removedTxId = found.record.txId;
-    }
+    removedTxId = removeRiceTransaction_(found.record.txId);
     sh.deleteRow(found.row);
     logAudit_(user.username, 'riceDelete', found.record.billNo);
   } finally {
@@ -773,8 +780,7 @@ function riceSnapshot_(user) {
     records: records,
     stock: riceStock_(all),
     riceTypes: Object.keys(types).sort(),
-    parties: Object.keys(parties).sort(),
-    wallets: rowsForUser_(MM_SHEETS.WALLETS, MM_BOOK).map(function (r) { return { id: String(r[1]), name: String(r[2]) }; })
+    parties: Object.keys(parties).sort()
   };
 }
 
@@ -801,70 +807,36 @@ function riceCompute_(input) {
     });
   }
 
-  const grossKg = number_(input.grossKg);
-  const tareKg = number_(input.tareKg);
-  const moisture = number_(input.moisture);
-  const moistureStd = input.moistureStd === '' || input.moistureStd == null ? 15 : number_(input.moistureStd);
-  const impurity = number_(input.impurity);
-  const pricePerTon = number_(input.pricePerTon);
-  const otherDeduct = Math.max(0, number_(input.otherDeduct));
   rec.party = clean_(input.party, 120);
-  if (!rec.party) throw new Error(kind === 'buy' ? 'กรุณาระบุชื่อผู้ขาย (ชาวนา)' : 'กรุณาระบุชื่อผู้ซื้อ');
+  if (kind === 'buy') rec.note = '';
+  if (kind === 'sell' && !rec.party) throw new Error('กรุณาระบุชื่อผู้ซื้อ');
   if (!rec.riceType) throw new Error('กรุณาระบุชนิดข้าว');
-  if (!(grossKg > 0)) throw new Error('กรุณาระบุน้ำหนักรถเข้า');
-  if (tareKg < 0 || tareKg >= grossKg) throw new Error('น้ำหนักรถออกต้องน้อยกว่าน้ำหนักรถเข้า');
-  if (moisture < 0 || moisture >= 100 || moistureStd < 0 || moistureStd >= 100) throw new Error('ค่าความชื้นไม่ถูกต้อง');
-  if (impurity < 0 || impurity >= 100) throw new Error('ค่าสิ่งเจือปนไม่ถูกต้อง');
-  if (!(pricePerTon > 0)) throw new Error('กรุณาระบุราคาต่อตัน');
-
-  const netKg = grossKg - tareKg;
-  const moistureKg = moisture > moistureStd ? netKg * (moisture - moistureStd) / (100 - moistureStd) : 0;
-  const impurityKg = (netKg - moistureKg) * impurity / 100;
-  const payKg = Math.max(0, Math.round(netKg - moistureKg - impurityKg));
-  const subtotal = Math.round(payKg / 1000 * pricePerTon * 100) / 100;
-  const paid = input.paid === true || input.paid === 'true';
+  const legacyGross = number_(input.grossKg);
+  const legacyTare = number_(input.tareKg);
+  const payKg = Math.max(0, Math.round(number_(input.payKg) || Math.max(0, legacyGross - legacyTare)));
+  const pricePerKg = number_(input.pricePerKg) || (number_(input.pricePerTon) ? number_(input.pricePerTon) / 1000 : 0);
+  if (!(payKg > 0)) throw new Error('กรุณาระบุน้ำหนักรวมข้าว');
+  if (!(pricePerKg > 0)) throw new Error(kind === 'buy' ? 'กรุณาระบุราคาซื้อบาทต่อกก.' : 'กรุณาระบุราคาขายบาทต่อกก.');
+  const pricePerTon = pricePerKg * 1000;
+  const subtotal = Math.round(payKg * pricePerKg * 100) / 100;
+  const paid = kind === 'sell' && (input.paid === true || input.paid === 'true');
   const paidDate = paid ? (isDateKey_(input.paidDate) ? String(input.paidDate) : date) : '';
   return Object.assign(rec, {
-    phone: clean_(input.phone, 40), plate: clean_(input.plate, 40),
-    grossKg: grossKg, tareKg: tareKg, netKg: netKg, moisture: moisture, moistureStd: moistureStd,
-    moistureKg: Math.round(moistureKg), impurity: impurity, impurityKg: Math.round(impurityKg), payKg: payKg,
-    pricePerTon: pricePerTon, subtotal: subtotal, otherDeduct: otherDeduct, otherNote: clean_(input.otherNote, 120),
-    total: Math.max(0, Math.round((subtotal - otherDeduct) * 100) / 100),
-    paid: paid, paidDate: paidDate, walletId: clean_(input.walletId, 120)
+    phone: '', plate: '',
+    grossKg: payKg, tareKg: 0, netKg: payKg, moisture: 0, moistureStd: 0,
+    moistureKg: 0, impurity: 0, impurityKg: 0, payKg: payKg,
+    pricePerKg: pricePerKg, pricePerTon: pricePerTon, subtotal: subtotal, otherDeduct: 0, otherNote: '',
+    total: subtotal,
+    paid: paid, paidDate: paidDate, walletId: '', txId: ''
   });
 }
 
-// บิลที่ชำระแล้ว = มีธุรกรรมในสมุดบัญชี, ยังไม่ชำระหรือรวมข้าว = ไม่มี
-function syncRiceTx_(record, now) {
-  const sh = getSheet_(MM_SHEETS.TRANSACTIONS);
-  const found = record.txId ? findBookTransactionRow_(sh, record.txId) : null;
-  if (record.kind === 'merge' || !record.paid) {
-    const removedTxId = record.txId || '';
-    if (found) sh.deleteRow(found.row);
-    record.txId = '';
-    return { tx: null, removedTxId: removedTxId };
-  }
-  const tx = {
-    id: found ? found.tx.id : 'tx_' + Utilities.getUuid().replace(/-/g, '').slice(0, 16),
-    type: record.kind === 'buy' ? 'expense' : 'income',
-    date: record.paidDate || record.date,
-    amount: record.total,
-    walletId: record.walletId,
-    targetWalletId: '',
-    categoryId: record.kind === 'buy' ? 'cat_rice_buy' : 'cat_rice_sell',
-    person: '',
-    dueDate: '',
-    status: 'open',
-    note: record.billNo + ' · ' + record.riceType + ' ' + record.payKg + ' กก. · ' + record.party,
-    tags: ['ข้าว'],
-    createdAt: found ? found.tx.createdAt : now,
-    updatedAt: now,
-    createdBy: record.createdBy
-  };
-  if (found) sh.getRange(found.row, 1, 1, MM_HEADERS[MM_SHEETS.TRANSACTIONS].length).setValues([transactionRow_(MM_BOOK, tx)]);
-  else appendRows_(MM_SHEETS.TRANSACTIONS, [transactionRow_(MM_BOOK, tx)]);
-  record.txId = tx.id;
-  return { tx: tx, removedTxId: '' };
+function removeRiceTransaction_(txId) {
+  if (!txId) return '';
+  const txSheet = getSheet_(MM_SHEETS.TRANSACTIONS);
+  const tx = findBookTransactionRow_(txSheet, txId);
+  if (tx) txSheet.deleteRow(tx.row);
+  return txId;
 }
 
 function riceStock_(records) {
@@ -954,16 +926,6 @@ function ensureRiceSheet_() {
     sh.getRange('L:M').setNumberFormat('@');
   }
   return sh;
-}
-
-function ensureRiceCategories_() {
-  const rows = rowsForUser_(MM_SHEETS.CATEGORIES, MM_BOOK);
-  const missing = MM_RICE_CATEGORIES.filter(function (c) {
-    return !rows.some(function (r) { return String(r[1]) === c.id; });
-  });
-  appendRows_(MM_SHEETS.CATEGORIES, missing.map(function (c, i) {
-    return [MM_BOOK, c.id, c.type, c.name, c.icon, c.color, rows.length + i + 1, new Date()];
-  }));
 }
 
 function isRiceCategory_(categoryId) {
@@ -1107,6 +1069,8 @@ function getBookState_(viewerUsername) {
       icon: String(r[4] || '•'),
       color: String(r[5] || '#79d7c4')
     };
+  }).filter(function (category) {
+    return !isRiceCategory_(category.id);
   });
 
   const budgetCategoryMap = {};
@@ -1123,11 +1087,13 @@ function getBookState_(viewerUsername) {
       name: String(r[2]),
       limit: number_(r[3]),
       color: String(r[4] || '#ffd84d'),
-      categoryIds: budgetCategoryMap[id] || []
+      categoryIds: (budgetCategoryMap[id] || []).filter(function (categoryId) { return !isRiceCategory_(categoryId); })
     };
   });
 
-  const transactions = rowsForUser_(MM_SHEETS.TRANSACTIONS, username).map(transactionFromRow_);
+  const transactions = rowsForUser_(MM_SHEETS.TRANSACTIONS, username).map(transactionFromRow_).filter(function (tx) {
+    return !isRiceCategory_(tx.categoryId);
+  });
 
   return {
     version: 1,
@@ -1139,7 +1105,7 @@ function getBookState_(viewerUsername) {
         search: String(filters.search || ''),
         type: String(filters.type || 'all'),
         wallet: String(filters.wallet || 'all'),
-        category: String(filters.category || 'all')
+        category: isRiceCategory_(filters.category) ? 'all' : String(filters.category || 'all')
       }
     },
     wallets: wallets,
@@ -1265,7 +1231,8 @@ function saveBookState_(viewerUsername, state, knownIds) {
   }));
 
   deleteRowsByUser_(MM_SHEETS.CATEGORIES, username);
-  appendRows_(MM_SHEETS.CATEGORIES, (state.categories || []).map(function (c, i) {
+  const categories = (state.categories || []).filter(function (c) { return !isRiceCategory_(c.id); });
+  appendRows_(MM_SHEETS.CATEGORIES, categories.map(function (c, i) {
     return [
       username,
       clean_(c.id, 120),
@@ -1294,12 +1261,13 @@ function saveBookState_(viewerUsername, state, knownIds) {
   const budgetCategoryRows = [];
   (state.budgets || []).forEach(function (b) {
     (b.categoryIds || []).forEach(function (categoryId) {
+      if (isRiceCategory_(categoryId)) return;
       budgetCategoryRows.push([username, clean_(b.id, 120), clean_(categoryId, 120)]);
     });
   });
   appendRows_(MM_SHEETS.BUDGET_CATEGORIES, budgetCategoryRows);
 
-  let transactions = state.transactions || [];
+  let transactions = (state.transactions || []).filter(function (tx) { return !isRiceCategory_(tx.categoryId); });
   let merge = { added: [], removedIds: [] };
   if (knownIds) {
     merge = mergeTransactions_(rowsForUser_(MM_SHEETS.TRANSACTIONS, username).map(transactionFromRow_), transactions, knownIds);
