@@ -4143,6 +4143,25 @@ const localStaffApi = {
     }
     writeJsonStorage(LOCAL_USERS_KEY, users);
     return this.apiListUsers();
+  },
+  apiExportBackup() {
+    if (isStaffUser()) throw new Error("เฉพาะผู้บริหารเท่านั้น");
+    return { ok: true, backup: buildBackupPayload() };
+  },
+  apiImportBackup(backup) {
+    if (isStaffUser()) throw new Error("เฉพาะผู้บริหารเท่านั้น");
+    const payload = unpackBackupPayload(backup);
+    writeJsonStorage(STORAGE_KEY, payload.state);
+    writeJsonStorage(RICE_STORAGE_KEY, payload.riceRecords);
+    return {
+      ok: true,
+      state: payload.state,
+      rice: localRiceSnapshot(),
+      counts: {
+        transactions: payload.state.transactions.length,
+        riceRecords: payload.riceRecords.length
+      }
+    };
   }
 };
 
@@ -7234,7 +7253,16 @@ function darkenForBar(hex) {
 /* ---------- Import / export ---------- */
 
 function exportBackup() {
-  downloadBlob(JSON.stringify(state, null, 2), `moneybook-backup-${todayKey()}.json`, "application/json;charset=utf-8");
+  if (isGasMode()) {
+    callApi("apiExportBackup")
+      .then((result) => {
+        downloadBackup(result.backup);
+        toast("ส่งออกไฟล์สำรองแล้ว");
+      })
+      .catch((error) => toast(error?.message || "ส่งออกไฟล์สำรองไม่สำเร็จ"));
+    return;
+  }
+  downloadBackup(buildBackupPayload());
   toast("ส่งออกไฟล์สำรองแล้ว");
 }
 
@@ -7258,18 +7286,109 @@ function importBackup(event) {
   event.target.value = "";
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     try {
-      const parsed = JSON.parse(reader.result);
-      if (!parsed || !Array.isArray(parsed.transactions) || !Array.isArray(parsed.wallets)) throw new Error("รูปแบบไฟล์ไม่ถูกต้อง");
-      if (!confirm(`นำเข้า ${parsed.transactions.length} รายการแทนข้อมูลปัจจุบันหรือไม่?`)) return;
-      state = normalizeState(parsed);
-      saveAndRender("นำเข้าข้อมูลแล้ว");
+      const backup = unpackBackupPayload(JSON.parse(reader.result));
+      const txCount = backup.state.transactions.length;
+      const riceCount = backup.riceRecords.length;
+      if (!confirm(`นำเข้าธุรกรรม ${txCount} รายการ และบิลซื้อ-ขายข้าว ${riceCount} รายการแทนข้อมูลปัจจุบันหรือไม่?`)) return;
+      if (isGasMode()) {
+        const result = await callApi("apiImportBackup", backup);
+        state = normalizeState(result.state || backup.state);
+        knownTxIds = new Set(state.transactions.map((tx) => tx.id));
+        rice.data = result.rice || null;
+        resetWalletForm();
+        resetBudgetForm();
+        resetCategoryForm();
+        render();
+        toast(`นำเข้าข้อมูลแล้ว (${txCount} ธุรกรรม, ${riceCount} บิลข้าว)`);
+        return;
+      }
+      state = backup.state;
+      writeJsonStorage(STORAGE_KEY, state);
+      writeJsonStorage(RICE_STORAGE_KEY, backup.riceRecords);
+      knownTxIds = new Set(state.transactions.map((tx) => tx.id));
+      rice.data = null;
+      resetWalletForm();
+      resetBudgetForm();
+      resetCategoryForm();
+      render();
+      toast(`นำเข้าข้อมูลแล้ว (${txCount} ธุรกรรม, ${riceCount} บิลข้าว)`);
     } catch (error) {
       toast(error.message || "นำเข้าไฟล์ไม่สำเร็จ");
     }
   };
   reader.readAsText(file, "utf-8");
+}
+
+function buildBackupPayload() {
+  return {
+    app: "MoneyBook",
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    state: normalizeState(state || loadState()),
+    riceRecords: localRiceRecords().map(stripRiceRecord)
+  };
+}
+
+function unpackBackupPayload(fileData) {
+  if (!fileData || typeof fileData !== "object") throw new Error("รูปแบบไฟล์ไม่ถูกต้อง");
+  const importedState = fileData.state && typeof fileData.state === "object" ? fileData.state : fileData;
+  if (!Array.isArray(importedState.transactions) || !Array.isArray(importedState.wallets)) throw new Error("รูปแบบไฟล์ไม่ถูกต้อง");
+  const riceRecords = Array.isArray(fileData.riceRecords)
+    ? fileData.riceRecords
+    : (Array.isArray(fileData.rice?.records) ? fileData.rice.records : []);
+  return {
+    app: "MoneyBook",
+    version: 2,
+    exportedAt: fileData.exportedAt || "",
+    state: normalizeState(importedState),
+    riceRecords: normalizeBackupRiceRecords(riceRecords)
+  };
+}
+
+function normalizeBackupRiceRecords(records) {
+  const used = new Set();
+  return (Array.isArray(records) ? records : []).map((record, index) => {
+    if (!record || typeof record !== "object") return null;
+    const kind = String(record.kind || "");
+    if (!RICE_KIND_LABELS[kind]) throw new Error(`ข้อมูลซื้อ-ขายข้าวรายการที่ ${index + 1} มีประเภทบิลไม่ถูกต้อง`);
+    let id = textValue(record.id) || uid("rice");
+    if (used.has(id)) id = `${id}_${index + 1}`;
+    used.add(id);
+    const normalized = {
+      ...record,
+      id,
+      kind,
+      date: isDateKey(record.date) ? record.date : todayKey(),
+      billNo: textValue(record.billNo) || `${RICE_PREFIX[kind]}${String(index + 1).padStart(3, "0")}`,
+      riceType: textValue(record.riceType),
+      payKg: Math.round(numberValue(record.payKg)),
+      total: numberValue(record.total),
+      paid: record.paid === true || String(record.paid).toLowerCase() === "true",
+      txId: textValue(record.txId),
+      createdAt: record.createdAt || new Date().toISOString(),
+      updatedAt: record.updatedAt || "",
+      createdBy: textValue(record.createdBy) || currentUsername() || DEFAULT_USERNAME
+    };
+    if (Array.isArray(normalized.sources)) {
+      normalized.sources = normalized.sources
+        .map((source) => ({ riceType: textValue(source?.riceType), kg: Math.round(numberValue(source?.kg)) }))
+        .filter((source) => source.riceType && source.kg > 0);
+    }
+    delete normalized.canEdit;
+    return normalized;
+  }).filter(Boolean);
+}
+
+function stripRiceRecord(record) {
+  const copy = { ...(record || {}) };
+  delete copy.canEdit;
+  return copy;
+}
+
+function downloadBackup(backup) {
+  downloadBlob(JSON.stringify(backup, null, 2), `moneybook-backup-${todayKey()}.json`, "application/json;charset=utf-8");
 }
 
 function seedDemoData() {
