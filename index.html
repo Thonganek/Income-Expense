@@ -729,6 +729,9 @@ fieldset { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--line)
 
 .data-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .data-actions { display: grid; gap: 10px; }
+.gs-sync-grid { display: grid; gap: 10px; }
+.gs-sync-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 0.35fr); gap: 10px; align-items: end; }
+.sync-status { margin: 0; color: var(--muted); font-size: 0.82rem; font-weight: 700; }
 .info-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 0.9rem; }
 .info-list li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface-soft); }
 .info-list li span { color: var(--muted); }
@@ -1461,7 +1464,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
   .cal-due { font-size: 0; gap: 0; }
   .day-totals { grid-template-columns: 1fr; }
   .filters { grid-template-columns: 1fr; }
-  .form-grid, .segmented, .choice-grid, .loan-grid { grid-template-columns: 1fr; }
+  .form-grid, .segmented, .choice-grid, .loan-grid, .gs-sync-row { grid-template-columns: 1fr; }
   .segmented { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 3px; }
   .segmented span { min-height: 34px; font-size: 0.78rem; white-space: nowrap; }
   .transaction-dialog .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1534,6 +1537,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
           <input id="yearPicker" type="number" min="2400" max="2700" step="1" inputmode="numeric" title="ปี พ.ศ." />
         </div>
         <button class="primary-btn" id="openTransactionBtn" type="button" title="เพิ่มรายการใหม่">＋ เพิ่มรายการ</button>
+        <button class="secondary-btn" id="topGsSaveBtn" type="button" title="บันทึกข้อมูลลง Google Sheet">บันทึก GS</button>
         <button class="icon-btn" id="logoutBtn" type="button" title="ออกจากระบบ">⏻</button>
       </div>
     </header>
@@ -2086,6 +2090,29 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
                 <button class="ghost-btn" id="seedDemoBtn" type="button">✨ ใส่ข้อมูลตัวอย่างย้อนหลัง 6 เดือน (ยอดเงินรวม 1,000,000)</button>
                 <button class="danger-btn" id="resetDemoBtn" type="button">ล้างข้อมูลทั้งหมด</button>
                 <input id="importFile" type="file" accept="application/json,.json" hidden />
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>บันทึกลง Google Sheet</h2>
+                  <p>ใช้ Web App URL จาก Apps Script เพื่อให้หน้า GitHub Pages ส่งข้อมูลเข้า Google Sheet ได้</p>
+                </div>
+              </div>
+              <div class="gs-sync-grid">
+                <label>
+                  <span>Apps Script Web App URL</span>
+                  <input id="gsWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+                </label>
+                <div class="gs-sync-row">
+                  <label>
+                    <span>รหัส Sync (ถ้ามี)</span>
+                    <input id="gsSyncKey" type="password" autocomplete="off" />
+                  </label>
+                  <button class="secondary-btn" id="saveGsConfigBtn" type="button">บันทึกค่า</button>
+                </div>
+                <button class="primary-btn" id="saveGsNowBtn" type="button">บันทึกลง Google Sheet ตอนนี้</button>
+                <p class="sync-status" id="gsSyncStatus"></p>
               </div>
             </section>
             <section class="panel">
@@ -2706,6 +2733,8 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
 const STORAGE_KEY = "moneybook.standalone.state.v1";
 const LOCAL_USERS_KEY = "moneybook.standalone.users.v1";
 const SESSION_KEY = "moneybook.session.v1";
+const GS_WEBAPP_URL_KEY = "moneybook.gs.webapp.url.v1";
+const GS_SYNC_KEY_KEY = "moneybook.gs.sync.key.v1";
 const DEFAULT_USERNAME = "admin";
 const DEFAULT_PASSWORD = "admin1234";
 
@@ -2821,6 +2850,8 @@ let state = null;
 let auth = loadSession();
 let toastTimer = null;
 let saveTimer = null;
+let gsSyncTimer = null;
+let gsSyncSerial = 0;
 let resizeTimer = null;
 let pendingRoute = null;
 let activeDateField = "";
@@ -2866,7 +2897,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function cacheDom() {
   const ids = [
-    "loginScreen", "loginForm", "loginHelp", "guestStaffBtn", "appShell", "modeKicker", "monthSelect", "yearPicker",
+    "loginScreen", "loginForm", "loginHelp", "guestStaffBtn", "appShell", "modeKicker", "monthSelect", "yearPicker", "topGsSaveBtn",
     "monthIncome", "incomeCount", "monthExpense", "expenseCount", "monthNet", "monthNetNote", "totalBalance", "walletCount",
     "homeDailyTitle", "homeDailyCanvas", "homeTrendCanvas",
     "calendarTitle", "calendarGrid", "selectedDayTitle", "selectedDaySummary", "dayTotals", "selectedDayList",
@@ -2880,7 +2911,7 @@ function cacheDom() {
     "walletListNote", "walletList", "walletFormTitle", "walletForm", "walletSubmitBtn", "walletCancelBtn",
     "categoryList", "categoryPresets", "emojiRow", "categoryFormTitle", "categoryForm", "categorySubmitBtn", "categoryCancelBtn",
     "loanCards", "openLoanNote", "openLoanList", "paidLoanNote", "paidLoanList",
-    "systemInfo", "importFile",
+    "systemInfo", "importFile", "gsWebAppUrl", "gsSyncKey", "saveGsConfigBtn", "saveGsNowBtn", "gsSyncStatus",
     "transactionDialog", "transactionForm", "dialogTitle", "targetWalletField", "categoryField", "loanPersonField", "loanPersonLabel",
     "dueDateField", "loanStatusField", "transactionHelper", "transactionHelperText", "quickWalletBtn", "quickCategoryBtn",
     "transactionDateDisplay", "dueDateDisplay", "thaiDatePicker", "thaiPickerMonth", "thaiPickerGrid",
@@ -3097,6 +3128,9 @@ function bindEvents() {
   document.getElementById("resetDemoBtn").addEventListener("click", resetAllData);
   document.getElementById("seedDemoBtn").addEventListener("click", seedDemoData);
   dom.importFile.addEventListener("change", importBackup);
+  dom.topGsSaveBtn.addEventListener("click", () => syncToGoogleSheet("manual"));
+  dom.saveGsConfigBtn.addEventListener("click", saveGoogleSheetConfig);
+  dom.saveGsNowBtn.addEventListener("click", () => syncToGoogleSheet("manual"));
   dom.logoutBtn.addEventListener("click", logout);
 
   document.addEventListener("click", handleActionClick);
@@ -3476,6 +3510,114 @@ function writeJsonStorage(key, value) {
   }
 }
 
+function readTextStorage(key) {
+  try {
+    return localStorage.getItem(key) || "";
+  } catch (error) {
+    return Object.prototype.hasOwnProperty.call(memoryStorage, key) ? String(memoryStorage[key] || "") : "";
+  }
+}
+
+function writeTextStorage(key, value) {
+  try {
+    localStorage.setItem(key, String(value || ""));
+  } catch (error) {
+    memoryStorage[key] = String(value || "");
+  }
+}
+
+function googleSheetConfig() {
+  return {
+    url: readTextStorage(GS_WEBAPP_URL_KEY).trim(),
+    key: readTextStorage(GS_SYNC_KEY_KEY)
+  };
+}
+
+function saveGoogleSheetConfig() {
+  const url = textValue(dom.gsWebAppUrl.value);
+  if (url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec(?:[?#].*)?$/i.test(url)) {
+    toast("กรุณาใส่ Apps Script Web App URL ที่ลงท้ายด้วย /exec");
+    return;
+  }
+  writeTextStorage(GS_WEBAPP_URL_KEY, url);
+  writeTextStorage(GS_SYNC_KEY_KEY, dom.gsSyncKey.value || "");
+  renderGoogleSheetSyncUi("บันทึกค่าแล้ว");
+  toast(url ? "บันทึกค่า Google Sheet แล้ว" : "ล้างค่า Google Sheet แล้ว");
+}
+
+function renderGoogleSheetSyncUi(message) {
+  if (!dom.gsWebAppUrl) return;
+  const config = googleSheetConfig();
+  if (document.activeElement !== dom.gsWebAppUrl) dom.gsWebAppUrl.value = config.url;
+  if (document.activeElement !== dom.gsSyncKey) dom.gsSyncKey.value = config.key;
+  const modeText = isGasMode()
+    ? "โหมด Apps Script: บันทึกลง Google Sheet โดยตรงอยู่แล้ว"
+    : (config.url ? "พร้อมบันทึกจาก GitHub Pages ไป Google Sheet" : "ยังไม่ได้ตั้งค่า Web App URL");
+  dom.gsSyncStatus.textContent = message ? `${modeText} · ${message}` : modeText;
+  if (dom.topGsSaveBtn) dom.topGsSaveBtn.textContent = isGasMode() ? "บันทึกแล้ว" : "บันทึก GS";
+}
+
+function scheduleGoogleSheetSync(reason) {
+  if (isGasMode()) return;
+  if (!googleSheetConfig().url) return;
+  clearTimeout(gsSyncTimer);
+  gsSyncTimer = setTimeout(() => syncToGoogleSheet(reason || "auto", { silent: true }), 900);
+}
+
+function syncToGoogleSheet(reason, options = {}) {
+  if (isGasMode()) {
+    saveState();
+    renderGoogleSheetSyncUi("โหมดนี้บันทึกลงชีตโดยตรง");
+    if (!options.silent) toast("โหมด Google Sheet บันทึกลงชีตโดยตรงอยู่แล้ว");
+    return true;
+  }
+  const config = googleSheetConfig();
+  if (!config.url) {
+    setView("details", "data");
+    renderGoogleSheetSyncUi("กรุณาใส่ Web App URL ก่อน");
+    if (!options.silent) toast("กรุณาใส่ Apps Script Web App URL ก่อน");
+    return false;
+  }
+  const backup = buildBackupPayload();
+  submitGoogleSheetPayload(config, backup, reason, options);
+  return true;
+}
+
+function submitGoogleSheetPayload(config, backup, reason, options = {}) {
+  const serial = ++gsSyncSerial;
+  let iframe = document.getElementById("gsSyncFrame");
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.id = "gsSyncFrame";
+    iframe.name = "gsSyncFrame";
+    iframe.hidden = true;
+    document.body.appendChild(iframe);
+  }
+  let form = document.getElementById("gsSyncForm");
+  if (!form) {
+    form = document.createElement("form");
+    form.id = "gsSyncForm";
+    form.method = "post";
+    form.target = "gsSyncFrame";
+    form.hidden = true;
+    form.innerHTML = '<input name="action" /><input name="key" /><textarea name="payload"></textarea>';
+    document.body.appendChild(form);
+  }
+  iframe.dataset.syncSerial = String(serial);
+  iframe.onload = () => {
+    if (iframe.dataset.syncSerial !== String(serial)) return;
+    const text = `ส่งข้อมูลไป Google Sheet แล้ว · ${new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`;
+    renderGoogleSheetSyncUi(text);
+    if (!options.silent) toast("ส่งข้อมูลไป Google Sheet แล้ว");
+  };
+  form.action = config.url;
+  form.querySelector('[name="action"]').value = "saveBackup";
+  form.querySelector('[name="key"]').value = config.key || "";
+  form.querySelector('[name="payload"]').value = JSON.stringify(backup);
+  renderGoogleSheetSyncUi(reason === "manual" ? "กำลังบันทึกลง Google Sheet..." : "กำลัง sync ไป Google Sheet...");
+  form.submit();
+}
+
 /* ---------- State ---------- */
 
 function defaultFilters() {
@@ -3594,6 +3736,7 @@ function saveState() {
     }
     writeJsonStorage(STORAGE_KEY, state);
     knownTxIds = new Set(state.transactions.map((tx) => tx.id));
+    scheduleGoogleSheetSync("auto");
     return;
   }
   if (!auth?.token) return;
@@ -3689,6 +3832,7 @@ function renderFrame() {
   document.querySelectorAll(".tab-btn").forEach((button) => button.classList.toggle("is-active", button.dataset.tab === tab));
   document.querySelectorAll("[data-tab-panel]").forEach((panel) => panel.classList.toggle("is-active", panel.dataset.tabPanel === tab));
   syncThaiMonthPicker(state.ui.month);
+  renderGoogleSheetSyncUi();
 }
 
 function renderHome() {
@@ -4104,6 +4248,7 @@ const localStaffApi = {
       book.transactions.push(normalizeTransaction({ ...fields, id: uid("tx"), createdAt: now, createdBy: user.username }, book.wallets[0]?.id));
     }
     writeJsonStorage(STORAGE_KEY, book);
+    scheduleGoogleSheetSync("staff");
     return this.apiStaffGetDay(input.date);
   },
   apiStaffDeleteTransaction(id, viewDate) {
@@ -4113,6 +4258,7 @@ const localStaffApi = {
     if (!localStaffCanEdit(tx)) throw new Error("แก้ไข/ลบได้เฉพาะรายการของตัวเองที่กรอกในวันนี้เท่านั้น");
     book.transactions = book.transactions.filter((item) => item.id !== id);
     writeJsonStorage(STORAGE_KEY, book);
+    scheduleGoogleSheetSync("staff");
     return this.apiStaffGetDay(viewDate);
   },
   apiListUsers() {
@@ -4692,6 +4838,7 @@ Object.assign(localStaffApi, {
     const link = syncLocalRiceTx(book, record, now);
     writeJsonStorage(STORAGE_KEY, book);
     writeJsonStorage(RICE_STORAGE_KEY, found ? all.map((item) => (item.id === record.id ? record : item)) : [...all, record]);
+    scheduleGoogleSheetSync("rice");
     return { ...localRiceSnapshot(), saved: record, tx: link.tx, removedTxId: link.removedTxId };
   },
   apiRiceDelete(id) {
@@ -4705,6 +4852,7 @@ Object.assign(localStaffApi, {
       writeJsonStorage(STORAGE_KEY, book);
     }
     writeJsonStorage(RICE_STORAGE_KEY, all.filter((record) => record.id !== id));
+    scheduleGoogleSheetSync("rice");
     return { ...localRiceSnapshot(), removedTxId: found.txId || "" };
   }
 });
@@ -6105,8 +6253,10 @@ function renderLoans() {
 function renderDataTab() {
   const user = auth?.user || {};
   const dates = state.transactions.map((tx) => tx.date).sort();
+  const gsConfig = googleSheetConfig();
   dom.systemInfo.innerHTML = [
     ["โหมดการใช้งาน", isGasMode() ? "Google Sheet (Apps Script)" : "Standalone (Browser)"],
+    ["Google Sheet Sync", isGasMode() ? "บันทึกโดยตรง" : (gsConfig.url ? "เปิดใช้งาน" : "ยังไม่ตั้งค่า")],
     ["ผู้ใช้", `${escapeHtml(user.displayName || user.username || "-")} (${isManagerRole(user.role) ? "ผู้บริหาร" : "พนักงาน"})`],
     ["จำนวนธุรกรรม", `${state.transactions.length} รายการ`],
     ["ช่วงข้อมูล", dates.length ? `${formatDate(dates[0])} ถึง ${formatDate(dates[dates.length - 1])}` : "ยังไม่มีข้อมูล"],
@@ -7313,6 +7463,7 @@ function importBackup(event) {
       resetBudgetForm();
       resetCategoryForm();
       render();
+      scheduleGoogleSheetSync("import");
       toast(`นำเข้าข้อมูลแล้ว (${txCount} ธุรกรรม, ${riceCount} บิลข้าว)`);
     } catch (error) {
       toast(error.message || "นำเข้าไฟล์ไม่สำเร็จ");

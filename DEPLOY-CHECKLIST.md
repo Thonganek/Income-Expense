@@ -40,6 +40,16 @@
 3. กด รายละเอียด › ข้อมูล › `นำเข้าไฟล์สำรอง`
 4. เลือกไฟล์ JSON ที่ได้จาก GitHub Pages ระบบจะนำเข้าทั้งธุรกรรมและบิลซื้อ-ขายข้าวลงชีต
 
+## ให้ GitHub Pages กดบันทึกลง Google Sheet ได้
+
+1. อัปเดต `code.gs` และ `Index.html` ใน Apps Script แล้ว Deploy › Manage deployments › แก้ไข › New version
+2. คัดลอก Web App URL ที่ลงท้ายด้วย `/exec`
+3. เปิด GitHub Pages แล้วไปที่ รายละเอียด › ข้อมูล › บันทึกลง Google Sheet
+4. วาง Web App URL แล้วกด `บันทึกค่า`
+5. กด `บันทึกลง Google Sheet ตอนนี้` หรือปุ่ม `บันทึก GS`
+
+ถ้าต้องการให้ต้องมีรหัสก่อนรับข้อมูล ให้ตั้ง Script Property ชื่อ `MM_SYNC_KEY` ใน Apps Script แล้วใส่รหัสเดียวกันในช่อง `รหัส Sync`
+
 ในโหมด GAS ข้อมูลและรหัสผ่านจะอยู่ใน Google Sheet โดยรหัสผ่านอยู่ที่ชีต `MM_Users` คอลัมน์ `Password`
 
 หลังเข้าใช้งานจริง แนะนำให้เปลี่ยนรหัสผ่านเริ่มต้นในชีต `MM_Users`

@@ -84,6 +84,44 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+function doPost(e) {
+  try {
+    ensurePublicSyncAllowed_(e && e.parameter);
+    const action = clean_(e && e.parameter && e.parameter.action, 40);
+    if (action !== 'saveBackup') throw new Error('ไม่รองรับ action นี้');
+    const payload = parseJson_(e.parameter.payload, null);
+    if (!payload) throw new Error('ไม่พบข้อมูลสำหรับบันทึก');
+    const imported = unpackBackup_(payload);
+    ensureSheetStructure_();
+    ensureDefaultAdmin_();
+    saveBookState_(MM_DEFAULT_USER, imported.state, null);
+    ensureRiceCategories_();
+    replaceRiceRecords_(imported.riceRecords);
+    logAudit_(MM_DEFAULT_USER, 'publicSync', 'Saved from GitHub Pages: ' + imported.state.transactions.length + ' transactions, ' + imported.riceRecords.length + ' rice records');
+    return jsonOutput_({
+      ok: true,
+      savedAt: Utilities.formatDate(new Date(), MM_TIME_ZONE, 'yyyy-MM-dd HH:mm:ss'),
+      counts: {
+        transactions: imported.state.transactions.length,
+        riceRecords: imported.riceRecords.length
+      }
+    });
+  } catch (err) {
+    return jsonOutput_({ ok: false, message: err && err.message ? err.message : String(err) });
+  }
+}
+
+function ensurePublicSyncAllowed_(params) {
+  const expected = PropertiesService.getScriptProperties().getProperty('MM_SYNC_KEY') || '';
+  if (expected && String(params && params.key || '') !== expected) throw new Error('รหัส Sync ไม่ถูกต้อง');
+}
+
+function jsonOutput_(value) {
+  return ContentService
+    .createTextOutput(JSON.stringify(value))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function setupSheet() {
   ensureSheetStructure_();
   resetAllData_();
