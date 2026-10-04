@@ -1369,12 +1369,14 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
 .rice-stock-head h2 { margin: 0; }
 .rice-stock-head p { margin: 0; color: var(--muted); font-size: 0.85rem; }
 .rice-stock-head label { display: grid; gap: 4px; width: 180px; }
-.rice-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.rice-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .rice-stats .stat-tile strong { font-size: clamp(1.15rem, 2vw, 1.5rem); }
 .stat-rice-buy { --tile-color: var(--income); }
 .stat-rice-sell { --tile-color: #eb6834; }
 .stat-rice-net { --tile-color: var(--accent); }
 .stat-rice-stock { --tile-color: var(--lend); }
+.stat-rice-value { --tile-color: var(--lend); }
+.stat-rice-forecast { --tile-color: var(--income); }
 .stat-rice-owe { --tile-color: var(--expense); }
 .stat-rice-due { --tile-color: var(--borrow); }
 
@@ -2463,7 +2465,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
             </div>
             <div class="table-wrap">
               <table class="data-table rice-mini-table">
-                <thead><tr><th>ชนิดข้าว</th><th class="num">รับเข้า</th><th class="num">ขาย/ตักออก</th><th class="num">คงเหลือ</th><th class="num">มูลค่าซื้อ</th></tr></thead>
+                <thead><tr><th>ชนิดข้าว</th><th class="num">รับเข้า</th><th class="num">ขาย/ตักออก</th><th class="num">คงเหลือ</th><th class="num">มูลค่าซื้อ</th><th class="num">มูลค่าคงเหลือ</th></tr></thead>
                 <tbody id="riceStockTable"></tbody>
               </table>
             </div>
@@ -5461,11 +5463,53 @@ function renderRiceStock() {
   const due = records.filter((record) => record.kind === "sell" && !record.paid);
   const sumTotal = (list) => list.reduce((sum, record) => sum + numberValue(record.total), 0);
   const tile = (className, label, value, note) => `<article class="stat-tile ${className}"><span>${label}</span><strong>${value}</strong><small>${note}</small></article>`;
+
+  // Remaining-stock value: cost = average buy price/kg of that type (merged piles use the average cost of their sources)
+  // Forecast = average sell price/kg of that type (if never sold, use the overall average sell price, then cost)
+  const priceByType = (kind) => records.filter((record) => record.kind === kind).reduce((map, record) => {
+    const key = riceTypeKey(record.riceType);
+    const entry = map.get(key) || { kg: 0, amount: 0 };
+    entry.kg += numberValue(record.payKg);
+    entry.amount += numberValue(record.total);
+    map.set(key, entry);
+    return map;
+  }, new Map());
+  const buyPrices = priceByType("buy");
+  const sellPrices = priceByType("sell");
+  const perKg = (map, key) => {
+    const entry = map.get(key);
+    return entry && entry.kg ? entry.amount / entry.kg : 0;
+  };
+  const allSell = aggregate(records.filter((record) => record.kind === "sell"));
+  const mergeCosts = records.filter((record) => record.kind === "merge").reduce((map, record) => {
+    const key = riceTypeKey(record.riceType);
+    const entry = map.get(key) || { kg: 0, amount: 0 };
+    (record.sources || []).forEach((source) => {
+      const kg = numberValue(source.kg);
+      entry.kg += kg;
+      entry.amount += kg * (perKg(buyPrices, riceTypeKey(source.riceType)) || allBuy.avg);
+    });
+    map.set(key, entry);
+    return map;
+  }, new Map());
+  const costPerKg = (key) => perKg(buyPrices, key) || perKg(mergeCosts, key) || allBuy.avg;
+  const salePerKg = (key) => perKg(sellPrices, key) || allSell.avg || costPerKg(key);
+  const stockValues = new Map(stock.map((item) => {
+    const key = riceTypeKey(item.riceType);
+    const kg = Math.max(0, numberValue(item.balanceKg));
+    return [key, { cost: kg * costPerKg(key), forecast: kg * salePerKg(key) }];
+  }));
+  const stockCost = Array.from(stockValues.values()).reduce((sum, value) => sum + value.cost, 0);
+  const stockForecast = Array.from(stockValues.values()).reduce((sum, value) => sum + value.forecast, 0);
+  const forecastIncome = sell.amount + stockForecast;
+
   dom.riceStats.innerHTML = [
     tile("stat-rice-buy", "รับซื้อเดือนนี้", money(buy.amount), `${kgText(buy.kg)} · ${buy.count} บิล · เฉลี่ย ${money(buy.avg)}/กก.`),
     tile("stat-rice-sell", "ขายออกเดือนนี้", money(sell.amount), `${kgText(sell.kg)} · ${sell.count} บิล · เฉลี่ย ${money(sell.avg)}/กก.`),
     tile("stat-rice-net", "ส่วนต่างขาย − ซื้อ", signedMoney(sell.amount - buy.amount), sell.avg && buy.avg ? `ส่วนต่างราคาเฉลี่ย ${signedMoney(sell.avg - buy.avg)}/กก.` : "ยอดขายหักยอดซื้อของเดือนนี้"),
+    tile("stat-rice-forecast", "คาดการณ์รายรับ", money(forecastIncome), `ขายเดือนนี้ ${money(sell.amount)} + ขายสต็อกที่เหลือ ${money(stockForecast)} · คาดกำไรจากสต็อก ${signedMoney(stockForecast - stockCost)}`),
     tile("stat-rice-stock", "สต็อกข้าวคงเหลือ", tonText(stockKg), `${stock.filter((item) => item.balanceKg > 0).length} ชนิด/กอง · ${kgText(stockKg)}`),
+    tile("stat-rice-value", "มูลค่าสต็อกคงเหลือ", money(stockCost), `ตามราคาซื้อเฉลี่ย · ถ้าขายตามราคาขายเฉลี่ย ≈ ${money(stockForecast)}`),
     tile("stat-rice-owe", "รับซื้อสะสม", money(allBuy.amount), `${kgText(allBuy.kg)} · ${allBuy.count} บิล (ทุกเดือน)`),
     tile("stat-rice-due", "ค้างรับจากผู้ซื้อ", money(sumTotal(due)), `${due.length} บิล (ทุกเดือน)`)
   ].join("");
@@ -5480,15 +5524,17 @@ function renderRiceStock() {
       ...item,
       inKg: numberValue(item.buyKg) + numberValue(item.mergeInKg),
       outKg: numberValue(item.sellKg) + numberValue(item.mergeOutKg),
-      amount: buyAmountByType.get(riceTypeKey(item.riceType)) || 0
+      amount: buyAmountByType.get(riceTypeKey(item.riceType)) || 0,
+      value: stockValues.get(riceTypeKey(item.riceType)) || { cost: 0, forecast: 0 }
     }))
     .sort((a, b) => a.riceType.localeCompare(b.riceType, "th"));
   const stockTotal = stockRows.reduce((sum, item) => ({
     inKg: sum.inKg + item.inKg,
     outKg: sum.outKg + item.outKg,
     balanceKg: sum.balanceKg + item.balanceKg,
-    amount: sum.amount + item.amount
-  }), { inKg: 0, outKg: 0, balanceKg: 0, amount: 0 });
+    amount: sum.amount + item.amount,
+    cost: sum.cost + item.value.cost
+  }), { inKg: 0, outKg: 0, balanceKg: 0, amount: 0, cost: 0 });
   dom.riceStockTable.innerHTML = stockRows.length
     ? stockRows.map((item) => `
         <tr>
@@ -5497,6 +5543,7 @@ function renderRiceStock() {
           <td class="num">${kgText(item.outKg)}<small>ขาย/ตักออก ${kgText(item.sellKg)} · รวมออก ${kgText(item.mergeOutKg)}</small></td>
           <td class="num"><b class="${item.balanceKg < 0 ? "expense-text" : "income-text"}">${kgText(item.balanceKg)}</b><small>${tonText(item.balanceKg)}</small></td>
           <td class="num"><b>${money(item.amount)}</b></td>
+          <td class="num"><b>${money(item.value.cost)}</b><small>ขาย ≈ ${money(item.value.forecast)}</small></td>
         </tr>
       `).join("") + `
         <tr class="rice-total-row">
@@ -5505,8 +5552,9 @@ function renderRiceStock() {
           <td class="num">${kgText(stockTotal.outKg)}<small>${tonText(stockTotal.outKg)}</small></td>
           <td class="num">${kgText(stockTotal.balanceKg)}<small>${tonText(stockTotal.balanceKg)}</small></td>
           <td class="num">${money(stockTotal.amount)}</td>
+          <td class="num">${money(stockTotal.cost)}<small>ขาย ≈ ${money(stockForecast)}</small></td>
         </tr>`
-    : `<tr><td colspan="5"><div class="empty-state">ยังไม่มีสต็อกข้าว</div></td></tr>`;
+    : `<tr><td colspan="6"><div class="empty-state">ยังไม่มีสต็อกข้าว</div></td></tr>`;
 
   const sells = records.filter((record) => record.kind === "sell").sort((a, b) => `${b.date}${b.createdAt}`.localeCompare(`${a.date}${a.createdAt}`));
   const paidSell = sells.filter((record) => record.paid);
