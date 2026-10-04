@@ -71,7 +71,18 @@ const MM_HEADERS = {
   ]
 };
 
-function doGet() {
+function doGet(e) {
+  // GitHub Pages pulls Dashboard data from the sheet: GET .../exec?action=getBackup
+  if (e && e.parameter && e.parameter.action === 'getBackup') {
+    try {
+      ensurePublicSyncAllowed_(e.parameter);
+      ensureSheetStructure_();
+      ensureRiceSheet_();
+      return jsonOutput_({ ok: true, backup: buildBackup_(getBookState_(MM_DEFAULT_USER), riceRecords_()) });
+    } catch (err) {
+      return jsonOutput_({ ok: false, message: err && err.message ? err.message : String(err) });
+    }
+  }
   return HtmlService
     .createTemplateFromFile('Index')
     .evaluate()
@@ -839,22 +850,39 @@ function removeRiceTransaction_(txId) {
   return txId;
 }
 
+function riceTypeKey_(type) {
+  return clean_(type, 80).replace(/\s+/g, ' ').toLowerCase();
+}
+
 function riceStock_(records) {
   const map = {};
   const row = function (type) {
-    if (!map[type]) map[type] = { riceType: type, buyKg: 0, sellKg: 0, mergeInKg: 0, mergeOutKg: 0, balanceKg: 0 };
-    return map[type];
+    const label = clean_(type, 80);
+    if (!label) return null;
+    const key = riceTypeKey_(label);
+    if (!map[key]) map[key] = { riceType: label, buyKg: 0, sellKg: 0, mergeInKg: 0, mergeOutKg: 0, balanceKg: 0 };
+    return map[key];
   };
   records.forEach(function (r) {
-    if (r.kind === 'buy') row(r.riceType).buyKg += number_(r.payKg);
-    if (r.kind === 'sell') row(r.riceType).sellKg += number_(r.payKg);
+    if (r.kind === 'buy') {
+      const stockRow = row(r.riceType);
+      if (stockRow) stockRow.buyKg += number_(r.payKg);
+    }
+    if (r.kind === 'sell') {
+      const stockRow = row(r.riceType);
+      if (stockRow) stockRow.sellKg += number_(r.payKg);
+    }
     if (r.kind === 'merge') {
-      (r.sources || []).forEach(function (s) { row(s.riceType).mergeOutKg += number_(s.kg); });
-      row(r.riceType).mergeInKg += number_(r.payKg);
+      (r.sources || []).forEach(function (s) {
+        const stockRow = row(s.riceType);
+        if (stockRow) stockRow.mergeOutKg += number_(s.kg);
+      });
+      const stockRow = row(r.riceType);
+      if (stockRow) stockRow.mergeInKg += number_(r.payKg);
     }
   });
-  return Object.keys(map).sort().map(function (type) {
-    const s = map[type];
+  return Object.keys(map).sort(function (a, b) { return map[a].riceType.localeCompare(map[b].riceType, 'th'); }).map(function (key) {
+    const s = map[key];
     s.balanceKg = s.buyKg + s.mergeInKg - s.sellKg - s.mergeOutKg;
     return s;
   });

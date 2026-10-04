@@ -1,0 +1,34 @@
+﻿Username	TransactionID	Type	Date	Amount	WalletID	TargetWalletID	CategoryID	Person	DueDate	Status	Note	Tags	CreatedAt	UpdatedAt	CreatedBy	LoanID
+admin	tx_mup14vr0_4xabh7	lend	2026-10-01	7000	wallet_mup0sqc2_8nnm2u			แม่ต้อย-พ่อป่อง		open	ยกยอดหนี้		2026-10-01T04:24:01.980Z		admin	
+admin	tx_mup15on8_2rco72	lend	2026-10-01	5000	wallet_mup0sqc2_8nnm2u			ยายเทียบ		open	ยกยอดหนี้		2026-10-01T04:24:39.428Z		admin	
+admin	tx_mup16lu4_ahopcb	lend	2026-10-01	14500	wallet_mup0sqc2_8nnm2u			ตาอู๋-แม่หรัด		open	ยกยอดหนี้		2026-10-01T04:25:22.444Z		admin	
+admin	tx_mup177po_2emkxt	lend	2026-10-01	20000	wallet_mup0sqc2_8nnm2u			พ่อมง		open	ยกยอดหนี้		2026-10-01T04:25:50.796Z		admin	
+admin	tx_mup17yrc_l0acgt	lend	2026-10-01	12000	wallet_mup0sqc2_8nnm2u			แม่ต้อย-พ่อศร		open	ยกยอดหนี้		2026-10-01T04:26:25.848Z		admin	
+admin	tx_mup18ip5_363xw6	lend	2026-10-01	5000	wallet_mup0sqc2_8nnm2u			แม่แก้ว		open	ยกยอดหนี้		2026-10-01T04:26:51.689Z		admin	
+admin	tx_mup19hn2_pzhab0	lend	2026-10-01	70000	wallet_mup0sqc2_8nnm2u			พ่อสมบัติ-แม่น้อย		open	ยกยอดหนี้		2026-10-01T04:27:36.974Z		admin	
+admin	tx_mup1ar4n_5cma8i	lend	2026-10-01	83020	wallet_mup0sqc2_8nnm2u			พี่ปู-พ่อพงษ์		open	ยกยอดหนี้		2026-10-01T04:28:35.928Z		admin	
+admin	tx_mup1barh_033dpy	lend	2026-10-01	2000	wallet_mup0sqc2_8nnm2u			ยายเรียน		open	ยกยอดหนี้		2026-10-01T04:29:01.373Z		admin	
+admin	tx_mup2d9f7_ftmwcr	borrow	2026-10-01	221297	wallet_mup1y0sd_g5yp1q			ตุ้ม		open	ยกยอด สค		2026-10-01T04:58:32.564Z	2026-10-01T07:55:24.855Z	admin	
+admin	tx_mup5z83v_l60t0d	expense	2026-10-01	2900	wallet_mup0242v_2vywav		cat_mup5bmr9_kidun9			open			2026-10-01T06:39:36.139Z		admin	
+admin	tx_mup5zxr1_lfunh4	expense	2026-10-01	530	wallet_mup0242v_2vywav		cat_mup5a8tk_z761pt			open	สรรพสามิต		2026-10-01T06:40:09.373Z		admin	
+admin	tx_mup84hu2_ygshak	borrow	2026-10-01	20293	wallet_mup1y0sd_g5yp1q			ตุ้ม		open	ค่าข้าวลัดดาวัลย์		2026-10-01T07:39:41.258Z		admin	
+admin	tx_mup85udr_ff5xqs	borrow	2026-10-01	125853	wallet_mup1y0sd_g5yp1q			ตุ้ม		open	ค่าข้าวอุมารินทร์		2026-10-01T07:40:44.175Z		admin	
+admin	tx_mup86vlx_i722ld	borrow	2026-10-01	96600	wallet_mup1y0sd_g5yp1q			ตุ้ม		open	ค่าข้าวสีประไพ		2026-10-01T07:41:32.421Z		admin	
+admin	tx_mupbvie0_5g2pgw	expense	2026-10-01	2870	wallet_mup0242v_2vywav		cat_mup5a78h_n8v8qq			open	ซ่อมลูกตี เครื่องสีข้าว		2026-10-01T09:24:40.536Z		admin	
+admin	tx_mupfc6k0_afhtw6	expense	2026-10-01	200	wallet_mup0aox9_vynfzl		cat_mup55dcg_v9pt0a			open	สองตักข้าว		2026-10-01T11:01:37.200Z		admin	
+admin	tx_mupfcnzv_3bk2zl	expense	2026-10-01	80	wallet_mup0aox9_vynfzl		cat_mup59bfy_929txl			open	น้ำแข็ง		2026-10-01T11:01:59.803Z		admin	
+admin	tx_mupfdq79_xyoygo	expense	2026-10-01	278	wallet_mup0aox9_vynfzl		cat_mup5ahx3_xdwc8r			open			2026-10-01T11:02:49.318Z		admin	
+admin	tx_mupfeaip_pldzct	expense	2026-10-01	148	wallet_mup0aox9_vynfzl		cat_mup5ahx3_xdwc8r			open			2026-10-01T11:03:15.649Z	2026-10-01T11:09:51.648Z	admin	
+admin	tx_mupfm2di_jeii4i	expense	2026-10-01	140	wallet_mup0aox9_vynfzl		cat_mup5a78h_n8v8qq			open	ดูดส้วม		2026-10-01T11:09:18.342Z		admin	
+admin	tx_mupfmi2g_ip1mgj	expense	2026-10-01	148	wallet_mup0aox9_vynfzl		cat_mup5ahx3_xdwc8r			open			2026-10-01T11:09:38.680Z		admin	
+admin	tx_muqwxgd8_icey4h	expense	2026-10-02	80	wallet_mup0aox9_vynfzl		cat_mup59bfy_929txl			open	น้ำแข็ง		2026-10-02T12:01:49.340Z		admin	
+admin	tx_muqwylw3_vn26qr	expense	2026-10-02	2511	wallet_mup0aox9_vynfzl		cat_mup59xhw_kh2tpq			open	เครื่องเดิม		2026-10-02T12:02:43.155Z		admin	
+admin	tx_muqwzb3g_9203m9	expense	2026-10-02	427	wallet_mup0aox9_vynfzl		cat_mup59xhw_kh2tpq			open	เครื่องใหม่		2026-10-02T12:03:15.820Z		admin	
+admin	tx_muqx02yq_5z2j7r	expense	2026-10-02	749	wallet_mup0aox9_vynfzl		cat_mup59xhw_kh2tpq			open	3bb ลานข้าว		2026-10-02T12:03:51.938Z		admin	
+admin	tx_muqx0sww_8764d3	expense	2026-10-02	632	wallet_mup0aox9_vynfzl		cat_mup59xhw_kh2tpq			open	3bb บ้านใหญ่		2026-10-02T12:04:25.568Z		admin	
+admin	tx_muqx3ufe_03bawq	expense	2026-10-02	387	wallet_mup0aox9_vynfzl		cat_mup59bfy_929txl			open	อาหาร+ตัดผมฌอห์น+ของเล่นฌอห์น		2026-10-02T12:06:47.498Z		admin	
+admin	tx_muqx7f4a_qbkaoq	income	2026-10-02	14	wallet_mup0aox9_vynfzl		cat_muqx76sr_onya5m			open	ติดบวก		2026-10-02T12:09:34.282Z		admin	
+admin	tx_muqx8us8_pjqab8	income	2026-10-02	18000	wallet_mup0aox9_vynfzl		cat_muqx8lgq_hcqvgo			open			2026-10-02T12:10:41.240Z		admin	
+admin	tx_muqxbc1z_65hc6g	income	2026-10-02	100	wallet_mup0aox9_vynfzl		cat_muqx76sr_onya5m			open	ลงเหรียญ  5		2026-10-02T12:12:36.935Z		admin	
+admin	tx_mus1316p_imlr2r	borrow	2026-10-02	100000	wallet_mup0aox9_vynfzl			ตุ้ม		open	โอนให้พี่ลิกดเงินสด		2026-10-03T06:45:54.241Z	2026-10-03T06:46:21.675Z	admin	
+admin	tx_mus19rh8_0qambt	income	2026-10-03	61	wallet_mup0aox9_vynfzl		cat_muqx76sr_onya5m			open			2026-10-03T06:51:08.252Z		admin	

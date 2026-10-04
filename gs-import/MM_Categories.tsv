@@ -1,0 +1,22 @@
+﻿Username	CategoryID	Type	Name	Icon	Color	SortOrder	UpdatedAt
+admin	cat_mup0ce8v_y8qjk8	income	ขายข้าวเหนียวปี	🚌	#d6f5e3	1	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup0ut56_1fpi7s	expense	คืนเงิน	฿	#cfe6ff	2	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup55dcg_v9pt0a	expense	คนงาน	🏃	#f3e2cf	3	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup57t68_xobfpv	expense	ค่าไฟ	💡	#fff3b0	4	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup58jdp_m61t58	expense	น้ำมัน	⛽	#ffd9d0	5	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup59bfy_929txl	expense	อาหาร	🍚	#ffe3c2	6	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup59oq6_klt8n0	expense	บริจาค/ทำบุญ	🙏	#fff0cc	7	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup59tz7_dc19mv	expense	ประกัน	🛡️	#dbe7f5	8	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup59v55_84yei1	expense	ของใช้ในบ้าน	🧴	#d9f4f2	9	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup59xhw_kh2tpq	expense	โทรศัพท์/เน็ต	📱	#dcd6ff	10	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5a6h1_qvfac8	expense	ค่างวดรถ	🚗	#dfe9ff	11	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5a78h_n8v8qq	expense	ซ่อมบำรุง	🔧	#e8e8e8	12	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5a8tk_z761pt	expense	ภาษี/ค่าธรรมเนียม	🧾	#eee6d8	13	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5ahx3_xdwc8r	expense	ของแม่	🎁	#ffd9e6	14	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5bmr9_kidun9	expense	หวย	🎉	#ffe0f0	15	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5cj9k_o40wom	expense	ร้านค่า	🏠	#e2f0d9	16	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5e6i8_m5x9zd	expense	ทำนา	🚌	#cfe6ff	17	2026-10-03T18:02:34.2095218+07:00
+admin	cat_mup5gk7k_dhjcta	expense	จ่ายดอก	💳	#e1e5f7	18	2026-10-03T18:02:34.2095218+07:00
+admin	cat_muqwweoe_zm96fx	expense	อื่น ๆ	•	#ececec	19	2026-10-03T18:02:34.2095218+07:00
+admin	cat_muqx76sr_onya5m	income	ติดบวก	•	#ffd6e8	20	2026-10-03T18:02:34.2095218+07:00
+admin	cat_muqx8lgq_hcqvgo	income	ถูกหวย	🎉	#d9f4f2	21	2026-10-03T18:02:34.2095218+07:00

@@ -2456,13 +2456,13 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
           <section class="panel">
             <div class="panel-head">
               <div>
-                <h2>สต็อกซื้อข้าว</h2>
-                <p>รวมตามชนิดข้าวและราคาซื้อเท่านั้น</p>
+                <h2>สต็อกข้าวคงเหลือ</h2>
+                <p>รวมข้าวชนิดเดียวกัน แล้วหักขาย/ตักออกให้เห็นยอดคงเหลือ</p>
               </div>
             </div>
             <div class="table-wrap">
               <table class="data-table rice-mini-table">
-                <thead><tr><th>ชนิดข้าว</th><th class="num">ราคาซื้อ/กก.</th><th class="num">น้ำหนักรวม</th><th class="num">มูลค่าซื้อ</th></tr></thead>
+                <thead><tr><th>ชนิดข้าว</th><th class="num">รับเข้า</th><th class="num">ขาย/ตักออก</th><th class="num">คงเหลือ</th><th class="num">มูลค่าซื้อ</th></tr></thead>
                 <tbody id="riceStockTable"></tbody>
               </table>
             </div>
@@ -2486,7 +2486,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
           </div>
           <div class="table-wrap">
             <table class="data-table">
-              <thead><tr><th>ชนิดข้าว</th><th class="num">ซื้อ (กก.)</th><th class="num">ซื้อ (บาท)</th><th class="num">เฉลี่ยซื้อ/กก.</th><th class="num">ขาย (กก.)</th><th class="num">ขาย (บาท)</th><th class="num">เฉลี่ยขาย/กก.</th></tr></thead>
+              <thead><tr><th>ชนิดข้าว</th><th class="num">ซื้อ (กก.)</th><th class="num">ซื้อ (บาท)</th><th class="num">เฉลี่ยซื้อ/กก.</th><th class="num">ขาย/ตักออก (กก.)</th><th class="num">ขาย (บาท)</th><th class="num">เฉลี่ยขาย/กก.</th><th class="num">คงเหลือในสต็อก</th></tr></thead>
               <tbody id="riceTypeSummary"></tbody>
             </table>
           </div>
@@ -2725,6 +2725,10 @@ const LOCAL_USERS_KEY = "moneybook.standalone.users.v1";
 const SESSION_KEY = "moneybook.session.v1";
 const GS_WEBAPP_URL_KEY = "moneybook.gs.webapp.url.v1";
 const GS_SYNC_KEY_KEY = "moneybook.gs.sync.key.v1";
+// GitHub Pages mode: Dashboard data is pulled from Google Sheet through this Web App only (localStorage is just a temporary cache)
+const GS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzWan4FkinRR8B-7UxskAlKZ8fU5EFl27D6JsEDMOMTLnUBx9GArYUVp8MeR03ONsfB/exec";
+const GS_PENDING_KEY = "moneybook.gs.pending.v1"; // there are edits in this browser not yet sent to GS
+const LOCAL_BACKUP_KEY = "moneybook.local.backup.before-gs.v1"; // copy of the old browser data before it is first replaced with GS data
 const DEFAULT_USERNAME = "admin";
 const DEFAULT_PASSWORD = "admin1234";
 
@@ -2870,6 +2874,17 @@ document.addEventListener("DOMContentLoaded", () => {
     storeSession(null);
   }
 
+  if (isGasMode()) {
+    continueStartup();
+    return;
+  }
+  showLogin("กำลังโหลดข้อมูลจาก Google Sheet...");
+  pullFromGoogleSheet()
+    .then(continueStartup)
+    .catch((error) => showGsLoadError(error));
+});
+
+function continueStartup() {
   if (isGasMode() && auth?.token) {
     bootstrapFromServer();
   } else if (isStandaloneMode() && auth?.token) {
@@ -2878,7 +2893,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isStandaloneMode()) ensureLocalUsers();
     startGuestStaff();
   }
-});
+}
 
 function cacheDom() {
   const ids = [
@@ -4712,18 +4727,35 @@ function computeRice(input) {
   };
 }
 
+function riceTypeKey(value) {
+  return textValue(value).replace(/\s+/g, " ").toLocaleLowerCase("th-TH");
+}
+
 function riceStock(records) {
   const map = new Map();
   const row = (type) => {
-    if (!map.has(type)) map.set(type, { riceType: type, buyKg: 0, sellKg: 0, mergeInKg: 0, mergeOutKg: 0, balanceKg: 0 });
-    return map.get(type);
+    const label = textValue(type);
+    if (!label) return null;
+    const key = riceTypeKey(label);
+    if (!map.has(key)) map.set(key, { riceType: label, buyKg: 0, sellKg: 0, mergeInKg: 0, mergeOutKg: 0, balanceKg: 0 });
+    return map.get(key);
   };
   records.forEach((record) => {
-    if (record.kind === "buy") row(record.riceType).buyKg += numberValue(record.payKg);
-    if (record.kind === "sell") row(record.riceType).sellKg += numberValue(record.payKg);
+    if (record.kind === "buy") {
+      const stockRow = row(record.riceType);
+      if (stockRow) stockRow.buyKg += numberValue(record.payKg);
+    }
+    if (record.kind === "sell") {
+      const stockRow = row(record.riceType);
+      if (stockRow) stockRow.sellKg += numberValue(record.payKg);
+    }
     if (record.kind === "merge") {
-      (record.sources || []).forEach((source) => { row(source.riceType).mergeOutKg += numberValue(source.kg); });
-      row(record.riceType).mergeInKg += numberValue(record.payKg);
+      (record.sources || []).forEach((source) => {
+        const stockRow = row(source.riceType);
+        if (stockRow) stockRow.mergeOutKg += numberValue(source.kg);
+      });
+      const stockRow = row(record.riceType);
+      if (stockRow) stockRow.mergeInKg += numberValue(record.payKg);
     }
   });
   return Array.from(map.values())
@@ -5315,32 +5347,43 @@ function renderRiceStock() {
     tile("stat-rice-due", "ค้างรับจากผู้ซื้อ", money(sumTotal(due)), `${due.length} บิล (ทุกเดือน)`)
   ].join("");
 
-  const buyGroups = Array.from(records.filter((record) => record.kind === "buy").reduce((map, record) => {
-    const price = numberValue(record.pricePerKg ?? (numberValue(record.pricePerTon) / 1000));
-    const key = `${record.riceType}__${price}`;
-    if (!map.has(key)) map.set(key, { riceType: record.riceType, pricePerKg: price, kg: 0, amount: 0 });
-    const row = map.get(key);
-    row.kg += numberValue(record.payKg);
-    row.amount += numberValue(record.total);
+  const buyAmountByType = records.filter((record) => record.kind === "buy").reduce((map, record) => {
+    const key = riceTypeKey(record.riceType);
+    map.set(key, (map.get(key) || 0) + numberValue(record.total));
     return map;
-  }, new Map()).values()).sort((a, b) => a.riceType.localeCompare(b.riceType, "th") || a.pricePerKg - b.pricePerKg);
-  const buyGroupTotal = buyGroups.reduce((sum, item) => ({ kg: sum.kg + item.kg, amount: sum.amount + item.amount }), { kg: 0, amount: 0 });
-  dom.riceStockTable.innerHTML = buyGroups.length
-    ? buyGroups.map((item) => `
+  }, new Map());
+  const stockRows = stock
+    .map((item) => ({
+      ...item,
+      inKg: numberValue(item.buyKg) + numberValue(item.mergeInKg),
+      outKg: numberValue(item.sellKg) + numberValue(item.mergeOutKg),
+      amount: buyAmountByType.get(riceTypeKey(item.riceType)) || 0
+    }))
+    .sort((a, b) => a.riceType.localeCompare(b.riceType, "th"));
+  const stockTotal = stockRows.reduce((sum, item) => ({
+    inKg: sum.inKg + item.inKg,
+    outKg: sum.outKg + item.outKg,
+    balanceKg: sum.balanceKg + item.balanceKg,
+    amount: sum.amount + item.amount
+  }), { inKg: 0, outKg: 0, balanceKg: 0, amount: 0 });
+  dom.riceStockTable.innerHTML = stockRows.length
+    ? stockRows.map((item) => `
         <tr>
           <td>${escapeHtml(item.riceType)}</td>
-          <td class="num">${money(item.pricePerKg)}</td>
-          <td class="num">${kgText(item.kg)}<small>${tonText(item.kg)}</small></td>
+          <td class="num">${kgText(item.inKg)}<small>ซื้อ ${kgText(item.buyKg)} · รวมเข้า ${kgText(item.mergeInKg)}</small></td>
+          <td class="num">${kgText(item.outKg)}<small>ขาย/ตักออก ${kgText(item.sellKg)} · รวมออก ${kgText(item.mergeOutKg)}</small></td>
+          <td class="num"><b class="${item.balanceKg < 0 ? "expense-text" : "income-text"}">${kgText(item.balanceKg)}</b><small>${tonText(item.balanceKg)}</small></td>
           <td class="num"><b>${money(item.amount)}</b></td>
         </tr>
       `).join("") + `
         <tr class="rice-total-row">
           <td>รวมทุกชนิด</td>
-          <td></td>
-          <td class="num">${kgText(buyGroupTotal.kg)}<small>${tonText(buyGroupTotal.kg)}</small></td>
-          <td class="num">${money(buyGroupTotal.amount)}</td>
+          <td class="num">${kgText(stockTotal.inKg)}<small>${tonText(stockTotal.inKg)}</small></td>
+          <td class="num">${kgText(stockTotal.outKg)}<small>${tonText(stockTotal.outKg)}</small></td>
+          <td class="num">${kgText(stockTotal.balanceKg)}<small>${tonText(stockTotal.balanceKg)}</small></td>
+          <td class="num">${money(stockTotal.amount)}</td>
         </tr>`
-    : `<tr><td colspan="4"><div class="empty-state">ยังไม่มีสต็อกซื้อข้าว</div></td></tr>`;
+    : `<tr><td colspan="5"><div class="empty-state">ยังไม่มีสต็อกข้าว</div></td></tr>`;
 
   const sells = records.filter((record) => record.kind === "sell").sort((a, b) => `${b.date}${b.createdAt}`.localeCompare(`${a.date}${a.createdAt}`));
   const paidSell = sells.filter((record) => record.paid);
@@ -5350,29 +5393,43 @@ function renderRiceStock() {
     : "ยังไม่มีรายการขายข้าว";
   dom.riceUnpaidList.innerHTML = sells.length ? sells.map(riceItemHtml).join("") : `<div class="empty-state">ยังไม่มีรายการขายข้าว</div>`;
 
+  const stockByType = new Map(stock.map((item) => [riceTypeKey(item.riceType), item]));
   const byType = new Map();
+  const ensureTypeSummary = (type) => {
+    const label = textValue(type);
+    if (!label) return null;
+    const key = riceTypeKey(label);
+    if (!byType.has(key)) byType.set(key, { riceType: label, buy: [], sell: [], stock: stockByType.get(key) || null });
+    return byType.get(key);
+  };
   monthRecords.filter((record) => record.kind !== "merge").forEach((record) => {
-    if (!byType.has(record.riceType)) byType.set(record.riceType, { buy: [], sell: [] });
-    byType.get(record.riceType)[record.kind].push(record);
+    const group = ensureTypeSummary(record.riceType);
+    if (group) group[record.kind].push(record);
   });
-  dom.riceTypeSummaryNote.textContent = `เดือน${monthLabel(month)} · ${byType.size} ชนิด`;
+  stock.forEach((item) => {
+    const group = ensureTypeSummary(item.riceType);
+    if (group) group.stock = item;
+  });
+  dom.riceTypeSummaryNote.textContent = `เดือน${monthLabel(month)} · ${byType.size} ชนิด · แสดงคงเหลือจากสต็อกทั้งหมด`;
   dom.riceTypeSummary.innerHTML = byType.size
-    ? Array.from(byType.entries()).sort((a, b) => a[0].localeCompare(b[0], "th")).map(([type, group]) => {
+    ? Array.from(byType.values()).sort((a, b) => a.riceType.localeCompare(b.riceType, "th")).map((group) => {
         const b = aggregate(group.buy);
         const s = aggregate(group.sell);
+        const balanceKg = numberValue(group.stock?.balanceKg);
         return `
           <tr>
-            <td>${escapeHtml(type)}</td>
+            <td>${escapeHtml(group.riceType)}</td>
             <td class="num">${kgText(b.kg)}</td>
             <td class="num">${money(b.amount)}</td>
             <td class="num">${b.kg ? money(b.avg) : "-"}</td>
             <td class="num">${kgText(s.kg)}</td>
             <td class="num">${money(s.amount)}</td>
             <td class="num">${s.kg ? money(s.avg) : "-"}</td>
+            <td class="num"><b class="${balanceKg < 0 ? "expense-text" : "income-text"}">${kgText(balanceKg)}</b></td>
           </tr>
         `;
       }).join("")
-    : `<tr><td colspan="7"><div class="empty-state">ยังไม่มีการซื้อขายในเดือนนี้</div></td></tr>`;
+    : `<tr><td colspan="8"><div class="empty-state">ยังไม่มีการซื้อขายในเดือนนี้</div></td></tr>`;
 }
 
 /* ----- พิมพ์บิล ----- */
