@@ -3618,7 +3618,7 @@ function reloadFromGoogleSheet() {
 }
 
 function restoreLocalBackupToGs() {
-  const saved = readJsonStorage(LOCAL_BACKUP_KEY, null);
+  const saved = isGasMode() ? null : readJsonStorage(LOCAL_BACKUP_KEY, null);
   if (!saved) {
     toast("ไม่มีข้อมูลเดิมในเครื่องนี้");
     return;
