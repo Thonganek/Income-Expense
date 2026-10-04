@@ -2096,13 +2096,13 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
               <div class="panel-head">
                 <div>
                   <h2>บันทึกลง Google Sheet</h2>
-                  <p>ใช้ Web App URL จาก Apps Script เพื่อให้หน้า GitHub Pages ส่งข้อมูลเข้า Google Sheet ได้</p>
+                  <p>หน้า GitHub Pages ดึงข้อมูลมาแสดงจาก Google Sheet เท่านั้น และทุกการบันทึกจะส่งเข้า Google Sheet</p>
                 </div>
               </div>
               <div class="gs-sync-grid">
                 <label>
                   <span>Apps Script Web App URL</span>
-                  <input id="gsWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+                  <input id="gsWebAppUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" readonly />
                 </label>
                 <div class="gs-sync-row">
                   <label>
@@ -2112,6 +2112,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
                   <button class="secondary-btn" id="saveGsConfigBtn" type="button">บันทึกค่า</button>
                 </div>
                 <button class="primary-btn" id="saveGsNowBtn" type="button">บันทึกลง Google Sheet ตอนนี้</button>
+                <button class="ghost-btn" id="restoreLocalGsBtn" type="button">กู้ข้อมูลเดิมในเครื่องนี้ (ก่อนเชื่อม GS) ส่งขึ้น Google Sheet</button>
                 <p class="sync-status" id="gsSyncStatus"></p>
               </div>
             </section>
@@ -2911,7 +2912,7 @@ function cacheDom() {
     "walletListNote", "walletList", "walletFormTitle", "walletForm", "walletSubmitBtn", "walletCancelBtn",
     "categoryList", "categoryPresets", "emojiRow", "categoryFormTitle", "categoryForm", "categorySubmitBtn", "categoryCancelBtn",
     "loanCards", "openLoanNote", "openLoanList", "paidLoanNote", "paidLoanList",
-    "systemInfo", "importFile", "gsWebAppUrl", "gsSyncKey", "saveGsConfigBtn", "saveGsNowBtn", "gsSyncStatus",
+    "systemInfo", "importFile", "gsWebAppUrl", "gsSyncKey", "saveGsConfigBtn", "saveGsNowBtn", "restoreLocalGsBtn", "gsSyncStatus",
     "transactionDialog", "transactionForm", "dialogTitle", "targetWalletField", "categoryField", "loanPersonField", "loanPersonLabel",
     "dueDateField", "loanStatusField", "transactionHelper", "transactionHelperText", "quickWalletBtn", "quickCategoryBtn",
     "transactionDateDisplay", "dueDateDisplay", "thaiDatePicker", "thaiPickerMonth", "thaiPickerGrid",
@@ -3131,6 +3132,7 @@ function bindEvents() {
   dom.topGsSaveBtn.addEventListener("click", () => syncToGoogleSheet("manual"));
   dom.saveGsConfigBtn.addEventListener("click", saveGoogleSheetConfig);
   dom.saveGsNowBtn.addEventListener("click", () => syncToGoogleSheet("manual"));
+  dom.restoreLocalGsBtn.addEventListener("click", restoreLocalBackupToGs);
   dom.logoutBtn.addEventListener("click", logout);
 
   document.addEventListener("click", handleActionClick);
@@ -3163,7 +3165,7 @@ function bindEvents() {
 
   // หน้าพนักงาน
   dom.staffLogoutBtn.addEventListener("click", () => (isGuestStaff() ? showLogin() : logout()));
-  dom.guestStaffBtn.addEventListener("click", startGuestStaff);
+  dom.guestStaffBtn.addEventListener("click", () => ensureGsLoaded().then(startGuestStaff).catch(showGsLoadError));
   dom.staffForm.addEventListener("submit", submitStaffForm);
   dom.staffForm.querySelectorAll('input[name="type"]').forEach((radio) => radio.addEventListener("change", () => fillStaffOptions()));
   dom.staffCancelEditBtn.addEventListener("click", () => resetStaffForm());
@@ -3335,7 +3337,9 @@ function login() {
   if (!username || !password) return;
 
   if (isStandaloneMode()) {
-    loginStandalone(username, password);
+    ensureGsLoaded()
+      .then(() => loginStandalone(username, password))
+      .catch(showGsLoadError);
     return;
   }
 
@@ -3528,9 +3532,107 @@ function writeTextStorage(key, value) {
 
 function googleSheetConfig() {
   return {
-    url: readTextStorage(GS_WEBAPP_URL_KEY).trim(),
+    url: GS_WEBAPP_URL,
     key: readTextStorage(GS_SYNC_KEY_KEY)
   };
+}
+
+let gsLoaded = false;
+
+function hasBookData(book, riceRecords) {
+  return Boolean(book && ((book.wallets || []).length || (book.transactions || []).length)) || (riceRecords || []).length > 0;
+}
+
+function gsUrl(params) {
+  const config = googleSheetConfig();
+  const query = new URLSearchParams({ ...params, key: config.key || "", t: String(Date.now()) });
+  return `${config.url}?${query}`;
+}
+
+// Pull the whole book + rice bills from GS into a cache, then render the Dashboard from that data
+async function pullFromGoogleSheet() {
+  const localBook = readJsonStorage(STORAGE_KEY, null);
+  const localRice = localRiceRecords();
+  // There are edits not yet sent to GS: send them first, otherwise the pulled data would overwrite them
+  if (readTextStorage(GS_PENDING_KEY)) await pushToGoogleSheet(buildBackupPayload());
+
+  const response = await fetch(gsUrl({ action: "getBackup" }));
+  const result = await response.json();
+  if (!result || !result.ok) throw new Error(result?.message || "โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ");
+  const remote = unpackBackupPayload(result.backup);
+
+  if (hasBookData(localBook, localRice) && !readJsonStorage(LOCAL_BACKUP_KEY, null)) {
+    writeJsonStorage(LOCAL_BACKUP_KEY, { ...buildBackupPayload(), savedAt: new Date().toISOString() });
+  }
+  if (!hasBookData(remote.state, remote.riceRecords) && hasBookData(localBook, localRice)) {
+    // GS is still empty but this browser has old data: send it up once so nothing is lost
+    await pushToGoogleSheet(buildBackupPayload());
+    gsLoaded = true;
+    return;
+  }
+  writeJsonStorage(STORAGE_KEY, localBook?.ui ? { ...remote.state, ui: localBook.ui } : remote.state);
+  writeJsonStorage(RICE_STORAGE_KEY, remote.riceRecords);
+  gsLoaded = true;
+}
+
+async function pushToGoogleSheet(backup) {
+  const config = googleSheetConfig();
+  const pendingAtStart = readTextStorage(GS_PENDING_KEY);
+  const body = new URLSearchParams({ action: "saveBackup", key: config.key || "", payload: JSON.stringify(backup) });
+  const response = await fetch(config.url, { method: "POST", body });
+  const result = await response.json();
+  if (!result || !result.ok) throw new Error(result?.message || "บันทึกลง Google Sheet ไม่สำเร็จ");
+  // Clear the flag only if there were no new edits while sending
+  if (readTextStorage(GS_PENDING_KEY) === pendingAtStart) writeTextStorage(GS_PENDING_KEY, "");
+  return result;
+}
+
+function ensureGsLoaded() {
+  if (isGasMode() || gsLoaded) return Promise.resolve();
+  showLogin("กำลังโหลดข้อมูลจาก Google Sheet...");
+  return pullFromGoogleSheet();
+}
+
+function showGsLoadError(error) {
+  showLogin(`โหลดข้อมูลจาก Google Sheet ไม่สำเร็จ: ${error?.message || error} · ตรวจสอบอินเทอร์เน็ต แล้วกดเข้าสู่ระบบอีกครั้ง`);
+}
+
+// The ↻ button: pull the latest data from GS again
+function reloadFromGoogleSheet() {
+  if (isGasMode()) {
+    loadRice();
+    return;
+  }
+  gsLoaded = false;
+  pullFromGoogleSheet()
+    .then(() => {
+      if (state && !isStaffUser()) {
+        state = normalizeState(loadState());
+        knownTxIds = new Set(state.transactions.map((tx) => tx.id));
+        render();
+      }
+      loadRice();
+      toast("โหลดข้อมูลล่าสุดจาก Google Sheet แล้ว");
+    })
+    .catch((error) => toast(`โหลดจาก Google Sheet ไม่สำเร็จ: ${error?.message || error}`));
+}
+
+function restoreLocalBackupToGs() {
+  const saved = readJsonStorage(LOCAL_BACKUP_KEY, null);
+  if (!saved) {
+    toast("ไม่มีข้อมูลเดิมในเครื่องนี้");
+    return;
+  }
+  const backup = unpackBackupPayload(saved);
+  if (!confirm(`ส่งข้อมูลเดิมในเครื่องนี้ (ธุรกรรม ${backup.state.transactions.length} รายการ, บิลข้าว ${backup.riceRecords.length} บิล) ไปแทนที่ข้อมูลใน Google Sheet หรือไม่?`)) return;
+  state = backup.state;
+  writeJsonStorage(STORAGE_KEY, state);
+  writeJsonStorage(RICE_STORAGE_KEY, backup.riceRecords);
+  knownTxIds = new Set(state.transactions.map((tx) => tx.id));
+  rice.data = null;
+  render();
+  writeTextStorage(GS_PENDING_KEY, String(Date.now()));
+  syncToGoogleSheet("manual");
 }
 
 function saveGoogleSheetConfig() {
@@ -3560,8 +3662,9 @@ function renderGoogleSheetSyncUi(message) {
 function scheduleGoogleSheetSync(reason) {
   if (isGasMode()) return;
   if (!googleSheetConfig().url) return;
+  writeTextStorage(GS_PENDING_KEY, String(Date.now()));
   clearTimeout(gsSyncTimer);
-  gsSyncTimer = setTimeout(() => syncToGoogleSheet(reason || "auto", { silent: true }), 900);
+  gsSyncTimer = setTimeout(() => syncToGoogleSheet(reason || "auto", { silent: true }), 600);
 }
 
 function syncToGoogleSheet(reason, options = {}) {
@@ -3585,6 +3688,26 @@ function syncToGoogleSheet(reason, options = {}) {
 
 function submitGoogleSheetPayload(config, backup, reason, options = {}) {
   const serial = ++gsSyncSerial;
+  renderGoogleSheetSyncUi(reason === "manual" ? "กำลังบันทึกลง Google Sheet..." : "กำลัง sync ไป Google Sheet...");
+  pushToGoogleSheet(backup)
+    .then(() => {
+      if (serial !== gsSyncSerial) return;
+      renderGoogleSheetSyncUi(`บันทึกลง Google Sheet แล้ว · ${new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`);
+      if (!options.silent) toast("บันทึกลง Google Sheet แล้ว");
+    })
+    .catch((error) => {
+      if (serial !== gsSyncSerial) return;
+      if (error instanceof TypeError) {
+        // fetch blocked (network/CORS): fall back to sending through a hidden form; the flag stays set so it is re-sent the next time the page opens
+        submitGoogleSheetForm(config, backup, serial, options);
+        return;
+      }
+      renderGoogleSheetSyncUi(`บันทึกไม่สำเร็จ: ${error.message}`);
+      toast(`บันทึกลง Google Sheet ไม่สำเร็จ: ${error.message}`);
+    });
+}
+
+function submitGoogleSheetForm(config, backup, serial, options = {}) {
   let iframe = document.getElementById("gsSyncFrame");
   if (!iframe) {
     iframe = document.createElement("iframe");
@@ -4523,7 +4646,7 @@ function bindRiceEvents() {
     button.addEventListener("click", () => setRiceTab(button.dataset.riceTab));
   });
   dom.riceBackBtn.addEventListener("click", closeRice);
-  dom.riceReloadBtn.addEventListener("click", loadRice);
+  dom.riceReloadBtn.addEventListener("click", reloadFromGoogleSheet);
 
   dom.riceBillForm.addEventListener("input", updateRiceBillForm);
   dom.riceBillForm.addEventListener("change", updateRiceBillForm);
