@@ -76,9 +76,17 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.action === 'getBackup') {
     try {
       ensurePublicSyncAllowed_(e.parameter);
-      ensureSheetStructure_();
-      ensureRiceSheet_();
-      return jsonOutput_({ ok: true, backup: buildBackup_(getBookState_(MM_DEFAULT_USER), riceRecords_()) });
+      // Hold the lock for the whole read so we never get a half-written book while another save is in progress
+      const lock = LockService.getScriptLock();
+      lock.waitLock(30000);
+      try {
+        ensureSheetStructure_();
+        ensureRiceSheet_();
+        removeDuplicateRows_();
+        return jsonOutput_({ ok: true, backup: buildBackup_(getBookState_(MM_DEFAULT_USER), riceRecords_()) });
+      } finally {
+        lock.releaseLock();
+      }
     } catch (err) {
       return jsonOutput_({ ok: false, message: err && err.message ? err.message : String(err) });
     }
@@ -90,6 +98,11 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+/**
+ * Save from GitHub Pages: merge with the data in the sheet, do not overwrite the whole thing
+ * - knownIds / knownRiceIds = ids this browser has already seen; any item in the sheet it never saw (added by another device/staff) is kept
+ * - Sends back the merged data so the browser shows the same thing as the sheet
+ */
 function doPost(e) {
   try {
     ensurePublicSyncAllowed_(e && e.parameter);
@@ -98,22 +111,90 @@ function doPost(e) {
     const payload = parseJson_(e.parameter.payload, null);
     if (!payload) throw new Error('ไม่พบข้อมูลสำหรับบันทึก');
     const imported = unpackBackup_(payload);
-    ensureSheetStructure_();
-    ensureDefaultAdmin_();
-    saveBookState_(MM_DEFAULT_USER, imported.state, null);
-    replaceRiceRecords_(imported.riceRecords);
-    logAudit_(MM_DEFAULT_USER, 'publicSync', 'Saved from GitHub Pages: ' + imported.state.transactions.length + ' transactions, ' + imported.riceRecords.length + ' rice records');
-    return jsonOutput_({
-      ok: true,
-      savedAt: Utilities.formatDate(new Date(), MM_TIME_ZONE, 'yyyy-MM-dd HH:mm:ss'),
-      counts: {
-        transactions: imported.state.transactions.length,
-        riceRecords: imported.riceRecords.length
-      }
-    });
+    const knownIds = Array.isArray(payload.knownIds) ? payload.knownIds.map(String) : null;
+    const knownRiceIds = Array.isArray(payload.knownRiceIds) ? payload.knownRiceIds.map(String) : null;
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+      ensureSheetStructure_();
+      ensureRiceSheet_();
+      ensureDefaultAdmin_();
+      saveBookState_(MM_DEFAULT_USER, imported.state, knownIds);
+      if (knownRiceIds) replaceRiceRecords_(mergeRiceRecords_(riceRecords_(), imported.riceRecords, knownRiceIds));
+      else replaceRiceRecords_(imported.riceRecords);
+      logAudit_(MM_DEFAULT_USER, 'publicSync', 'Saved from GitHub Pages: ' + imported.state.transactions.length + ' transactions, ' + imported.riceRecords.length + ' rice records');
+      return jsonOutput_({
+        ok: true,
+        savedAt: Utilities.formatDate(new Date(), MM_TIME_ZONE, 'yyyy-MM-dd HH:mm:ss'),
+        backup: buildBackup_(getBookState_(MM_DEFAULT_USER), riceRecords_())
+      });
+    } finally {
+      lock.releaseLock();
+    }
   } catch (err) {
     return jsonOutput_({ ok: false, message: err && err.message ? err.message : String(err) });
   }
+}
+
+// Same principle as mergeTransactions_: keep bills others added, drop bills others deleted, use whichever was edited most recently
+function mergeRiceRecords_(existing, incoming, knownIds) {
+  const known = {};
+  knownIds.forEach(function (id) { known[id] = true; });
+  const existingById = {};
+  existing.forEach(function (record) { existingById[record.id] = record; });
+  const incomingIds = {};
+  const merged = [];
+  incoming.forEach(function (record) {
+    incomingIds[record.id] = true;
+    const current = existingById[record.id];
+    if (!current) {
+      if (!known[record.id]) merged.push(record);
+      return;
+    }
+    merged.push(String(current.updatedAt || '') > String(record.updatedAt || '') ? current : record);
+  });
+  existing.forEach(function (record) {
+    if (!incomingIds[record.id] && !known[record.id]) merged.push(record);
+  });
+  return merged;
+}
+
+/**
+ * Delete duplicate rows in the sheet (transactions, wallets, categories, budgets, rice bills) — keep one of each
+ * Runs automatically when GitHub Pages loads data, or Run > removeDuplicateRows by hand
+ */
+function removeDuplicateRows() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const message = removeDuplicateRows_();
+    Logger.log(message);
+    return message;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// The caller must already hold the lock
+function removeDuplicateRows_() {
+  const counts = function (sheetName) { return rowsForUser_(sheetName, MM_BOOK).length; };
+  const before = {
+    tx: counts(MM_SHEETS.TRANSACTIONS), wallets: counts(MM_SHEETS.WALLETS),
+    categories: counts(MM_SHEETS.CATEGORIES), budgets: counts(MM_SHEETS.BUDGETS), rice: counts(MM_SHEETS.RICE)
+  };
+  const state = getBookState_(MM_DEFAULT_USER);
+  const rice = riceRecords_();
+  const removed = (before.tx - state.transactions.length) + (before.wallets - state.wallets.length) +
+    (before.categories - state.categories.length) + (before.budgets - state.budgets.length) + (before.rice - rice.length);
+  // getBookState_ drops cat_rice_* items; count only rows that are actually duplicates
+  const riceCatRows = rowsForUser_(MM_SHEETS.TRANSACTIONS, MM_BOOK).filter(function (r) { return isRiceCategory_(r[7]); }).length +
+    rowsForUser_(MM_SHEETS.CATEGORIES, MM_BOOK).filter(function (r) { return isRiceCategory_(r[1]); }).length;
+  if (removed - riceCatRows <= 0) return 'ไม่พบแถวซ้ำ';
+  saveBookState_(MM_DEFAULT_USER, state, null);
+  replaceRiceRecords_(rice);
+  const message = 'ลบแถวซ้ำแล้ว ' + (removed - riceCatRows) + ' แถว';
+  logAudit_(MM_DEFAULT_USER, 'removeDuplicateRows', message);
+  return message;
 }
 
 function ensurePublicSyncAllowed_(params) {
@@ -306,10 +387,10 @@ function buildDemoState_() {
   return {
     version: 1,
     ui: { view: 'home', month: currentMonth_(), selectedDate: today_(), filters: { search: '', type: 'all', wallet: 'all', category: 'all' } },
-    wallets: wallets,
-    categories: categories,
-    budgets: budgets,
-    transactions: transactions
+    wallets: dedupeById_(wallets),
+    categories: dedupeById_(categories),
+    budgets: dedupeById_(budgets),
+    transactions: dedupeTransactions_(transactions)
   };
 }
 
@@ -317,7 +398,10 @@ function ensureSheetStructure_() {
   const ss = getSpreadsheet_();
   Object.keys(MM_HEADERS).forEach(function (name) {
     const sh = getOrCreateSheet_(ss, name);
-    setupHeader_(sh, MM_HEADERS[name]);
+    const headers = MM_HEADERS[name];
+    // Headers already correct: skip the formatting/column resizing (slow; runs on every save)
+    const current = sh.getLastColumn() >= headers.length ? sh.getRange(1, 1, 1, headers.length).getValues()[0] : [];
+    if (current.join('\u0001') !== headers.join('\u0001')) setupHeader_(sh, headers);
   });
   // เก็บวันที่/เวลาเป็นข้อความล้วน กันชีตแปลงเป็นวันที่เองตาม locale/เขตเวลา (เช่น ปี พ.ศ. หรือวันเลื่อน) จนข้อมูลไม่ขึ้นในเดือนที่เลือก
   const tx = ss.getSheetByName(MM_SHEETS.TRANSACTIONS);
@@ -514,9 +598,12 @@ function normalizeImportedRiceRecords_(records) {
     const kind = String(input.kind || '');
     if (MM_RICE_KINDS.indexOf(kind) < 0) throw new Error('ข้อมูลซื้อ-ขายข้าวรายการที่ ' + (index + 1) + ' มีประเภทบิลไม่ถูกต้อง');
     const date = isDateKey_(input.date) ? String(input.date) : today_();
-    let id = clean_(input.id, 120) || ('rice_import_' + Utilities.getUuid().replace(/-/g, '').slice(0, 16));
-    if (used[id]) id = id + '_' + (index + 1);
+    const id = clean_(input.id, 120) || ('rice_import_' + Utilities.getUuid().replace(/-/g, '').slice(0, 16));
+    // Same bill (same id, or same bill no. + creation time) = duplicate row: keep only one
+    const signature = kind + '|' + clean_(input.billNo, 80) + '|' + clean_(input.createdAt, 40);
+    if (used[id] || (input.billNo && input.createdAt && used[signature])) return null;
     used[id] = true;
+    used[signature] = true;
     const payKg = Math.round(number_(input.payKg));
     const pricePerKg = number_(input.pricePerKg) || (number_(input.pricePerTon) ? number_(input.pricePerTon) / 1000 : 0);
     const total = number_(input.total) || Math.round(payKg * pricePerKg * 100) / 100;
@@ -558,6 +645,13 @@ function normalizeImportedRiceRecords_(records) {
       record.sources = record.sources.map(function (source) {
         return { riceType: clean_(source && source.riceType, 80), kg: Math.round(number_(source && source.kg)) };
       }).filter(function (source) { return source.riceType && source.kg > 0; });
+    }
+    if (kind === 'merge') {
+      // Merge bill: source weight = sum of the piles brought in (not the weight after loss)
+      const sourceKg = (record.sources || []).reduce(function (sum, source) { return sum + source.kg; }, 0);
+      record.netKg = sourceKg || payKg;
+      record.grossKg = record.netKg;
+      record.lossKg = Math.max(0, Math.round(number_(input.lossKg)));
     }
     delete record.canEdit;
     return record;
@@ -905,7 +999,39 @@ function riceCanEdit_(user, record) {
 }
 
 function riceRecords_() {
-  return rowsForUser_(MM_SHEETS.RICE, MM_BOOK).map(riceFromRow_);
+  const seen = {};
+  return rowsForUser_(MM_SHEETS.RICE, MM_BOOK).map(riceFromRow_).filter(function (record) {
+    const signature = record.kind + '|' + record.billNo + '|' + record.createdAt;
+    if (seen[record.id] || (record.billNo && record.createdAt && seen[signature])) return false;
+    seen[record.id] = true;
+    seen[signature] = true;
+    return true;
+  });
+}
+
+// Remove duplicate rows by id (on a repeat, keep the most recently edited one)
+function dedupeById_(list) {
+  const byId = {};
+  const order = [];
+  (list || []).forEach(function (item) {
+    const id = String(item && item.id || '');
+    if (!id) { order.push(item); return; }
+    if (!byId[id]) { byId[id] = item; order.push(id); return; }
+    if (String(item.updatedAt || '') > String(byId[id].updatedAt || '')) byId[id] = item;
+  });
+  return order.map(function (key) { return typeof key === 'string' ? byId[key] : key; });
+}
+
+// Transactions: besides the same id, an item with identical created-at time + content is also a duplicate copy
+function dedupeTransactions_(list) {
+  const seen = {};
+  return dedupeById_(list).filter(function (tx) {
+    if (!tx.createdAt) return true;
+    const signature = [tx.createdAt, tx.type, tx.date, tx.amount, tx.walletId, tx.targetWalletId, tx.categoryId, tx.person, tx.note].join('|');
+    if (seen[signature]) return false;
+    seen[signature] = true;
+    return true;
+  });
 }
 
 function riceFromRow_(r) {
@@ -1136,10 +1262,10 @@ function getBookState_(viewerUsername) {
         category: isRiceCategory_(filters.category) ? 'all' : String(filters.category || 'all')
       }
     },
-    wallets: wallets,
-    categories: categories,
-    budgets: budgets,
-    transactions: transactions
+    wallets: dedupeById_(wallets),
+    categories: dedupeById_(categories),
+    budgets: dedupeById_(budgets),
+    transactions: dedupeTransactions_(transactions)
   };
 }
 
@@ -1230,6 +1356,12 @@ function mergeTransactions_(existing, incoming, knownIds) {
 function saveBookState_(viewerUsername, state, knownIds) {
   const username = MM_BOOK;
   const now = new Date();
+  state = Object.assign({}, state, {
+    wallets: dedupeById_(state.wallets),
+    categories: dedupeById_(state.categories),
+    budgets: dedupeById_(state.budgets),
+    transactions: dedupeTransactions_(state.transactions)
+  });
   const ui = state.ui || {};
   const filters = ui.filters || {};
 
@@ -1299,7 +1431,7 @@ function saveBookState_(viewerUsername, state, knownIds) {
   let merge = { added: [], removedIds: [] };
   if (knownIds) {
     merge = mergeTransactions_(rowsForUser_(MM_SHEETS.TRANSACTIONS, username).map(transactionFromRow_), transactions, knownIds);
-    transactions = merge.merged;
+    transactions = dedupeTransactions_(merge.merged);
   }
   deleteRowsByUser_(MM_SHEETS.TRANSACTIONS, username);
   appendRows_(MM_SHEETS.TRANSACTIONS, transactions.map(function (t) { return transactionRow_(username, t); }));
