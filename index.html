@@ -1388,6 +1388,7 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
 .stat-rice-stock { --tile-color: var(--lend); }
 .stat-rice-value { --tile-color: var(--lend); }
 .stat-rice-forecast { --tile-color: var(--income); }
+.stat-tile small .rice-stock-profit { display: inline; color: var(--expense-ink); font-size: inherit; font-weight: 800; }
 .stat-rice-owe { --tile-color: var(--expense); }
 .stat-rice-due { --tile-color: var(--borrow); }
 
@@ -5649,7 +5650,7 @@ function renderRiceStock() {
     tile("stat-rice-buy", `รับซื้อ${range.word}`, money(buy.amount), `${kgText(buy.kg)} · ${buy.count} บิล · เฉลี่ย ${money(buy.avg)}/กก.`),
     tile("stat-rice-sell", `ขายออก${range.word}`, money(sell.amount), `${kgText(sell.kg)} · ${sell.count} บิล · เฉลี่ย ${money(sell.avg)}/กก.`),
     tile("stat-rice-net", "ส่วนต่างขาย − ซื้อ", signedMoney(sell.amount - buy.amount), sell.avg && buy.avg ? `ส่วนต่างราคาเฉลี่ย ${signedMoney(sell.avg - buy.avg)}/กก.` : `ยอดขายหักยอดซื้อของ${range.word}`),
-    tile("stat-rice-forecast", "คาดการณ์รายรับ", money(forecastIncome), `ขาย${range.word} ${money(sell.amount)} + ขายสต็อกที่เหลือ ${money(stockForecast)} · <span class="expense-text">คาดกำไรจากสต็อก ${signedMoney(stockForecast - stockCost)}</span>`),
+    tile("stat-rice-forecast", "คาดการณ์รายรับ", money(forecastIncome), `ขาย${range.word} ${money(sell.amount)} + ขายสต็อกที่เหลือ ${money(stockForecast)} · <span class="rice-stock-profit">คาดกำไรจากสต็อก ${signedMoney(stockForecast - stockCost)}</span>`),
     tile("stat-rice-stock", "สต็อกข้าวคงเหลือ", tonText(stockKg), `${stock.filter((item) => item.balanceKg > 0).length} ชนิด/กอง · ${kgText(stockKg)}${oversold.length ? ` · ขายเกินสต็อก ${oversold.length} ชนิด (${kgText(-oversold.reduce((sum, item) => sum + item.balanceKg, 0))})` : ""}${stockAsOf}`),
     tile("stat-rice-value", "มูลค่าสต็อกคงเหลือ", money(stockCost), `ตามราคาซื้อเฉลี่ย · ถ้าขายตามราคาขายเฉลี่ย ≈ ${money(stockForecast)}${stockAsOf}`),
     tile("stat-rice-owe", "รับซื้อสะสม", money(allBuy.amount), `${kgText(allBuy.kg)} · ${allBuy.count} บิล (ทุกเดือน)`),
