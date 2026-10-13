@@ -1370,7 +1370,16 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
 .rice-stock-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .rice-stock-head h2 { margin: 0; }
 .rice-stock-head p { margin: 0; color: var(--muted); font-size: 0.85rem; }
-.rice-stock-head label { display: grid; gap: 4px; width: 180px; }
+.rice-period { display: grid; gap: 8px; justify-items: end; }
+.segmented.rice-period-seg { grid-template-columns: repeat(4, minmax(0, auto)); }
+.rice-period-seg span { padding: 0 14px; white-space: nowrap; }
+.rice-period-inputs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.rice-period-inputs label { display: grid; gap: 4px; width: 170px; }
+@media (max-width: 760px) {
+  .rice-period { width: 100%; justify-items: stretch; }
+  .rice-period-seg span { padding: 0 6px; }
+  .rice-period-inputs label { flex: 1 1 140px; width: auto; }
+}
 .rice-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .rice-stats .stat-tile strong { font-size: clamp(1.15rem, 2vw, 1.5rem); }
 .stat-rice-buy { --tile-color: var(--income); }
@@ -2454,7 +2463,19 @@ input, select, textarea, .thai-date-button { background: rgba(255, 255, 255, 0.8
             <h2>ภาพรวมซื้อ-ขายข้าว</h2>
             <p id="riceSummaryLabel">เดือนที่เลือก</p>
           </div>
-          <label><span>เดือน</span><input id="riceSummaryMonth" type="month" /></label>
+          <div class="rice-period">
+            <div class="segmented rice-period-seg" id="ricePeriodSeg" role="radiogroup" aria-label="ช่วงเวลา">
+              <label><input type="radio" name="ricePeriod" value="today" /><span>วันนี้</span></label>
+              <label><input type="radio" name="ricePeriod" value="7d" /><span>7 วัน</span></label>
+              <label><input type="radio" name="ricePeriod" value="month" checked /><span>เดือน</span></label>
+              <label><input type="radio" name="ricePeriod" value="custom" /><span>กำหนดเอง</span></label>
+            </div>
+            <div class="rice-period-inputs">
+              <label id="riceMonthField"><span>เดือน</span><input id="riceSummaryMonth" type="month" /></label>
+              <label id="riceFromField"><span>จาก</span><input id="riceSummaryFrom" type="date" /></label>
+              <label id="riceToField"><span>ถึง</span><input id="riceSummaryTo" type="date" /></label>
+            </div>
+          </div>
         </section>
         <div class="rice-stats" id="riceStats"></div>
         <div class="rice-two">
@@ -2861,6 +2882,9 @@ const rice = {
   returnTo: "",
   editingMerge: null,
   summaryMonth: "",
+  summaryPeriod: "month",
+  summaryFrom: "",
+  summaryTo: "",
   filters: { search: "", range: "month", month: "", kind: "all", status: "all" }
 };
 const editing = { wallet: "", budget: "", category: "" };
@@ -2931,7 +2955,7 @@ function cacheDom() {
     "riceDayTitle", "riceDayNote", "riceDayList", "riceMergeKicker", "riceMergeForm", "riceSources", "riceAddSourceBtn",
     "riceMergeResetBtn", "riceMergeSubmitBtn", "riceMergeSummary", "riceMergeNote", "riceMergeList",
     "riceSearch", "riceRange", "riceMonth", "riceKindFilter", "riceStatusFilter", "riceExportBtn", "riceListSummary", "riceTable",
-    "riceSummaryLabel", "riceSummaryMonth", "riceStats", "riceStockTable", "riceUnpaidNote", "riceUnpaidList", "riceTypeSummaryNote",
+    "riceSummaryLabel", "riceSummaryMonth", "riceSummaryFrom", "riceSummaryTo", "riceMonthField", "riceFromField", "riceToField", "ricePeriodSeg", "riceStats", "riceStockTable", "riceUnpaidNote", "riceUnpaidList", "riceTypeSummaryNote",
     "riceTypeSummary", "riceTypeList", "ricePartyList", "ricePrint",
     "userListNote", "userList", "reloadUsersBtn", "userFormTitle", "userForm", "userPasswordLabel", "userCancelBtn", "userSubmitBtn"
   ];
@@ -4747,6 +4771,20 @@ function bindRiceEvents() {
     rice.summaryMonth = dom.riceSummaryMonth.value || currentMonthKey();
     renderRiceStock();
   });
+  dom.ricePeriodSeg.addEventListener("change", (event) => {
+    if (event.target.name !== "ricePeriod") return;
+    rice.summaryPeriod = event.target.value;
+    if (rice.summaryPeriod === "custom" && !rice.summaryFrom) {
+      rice.summaryFrom = `${currentMonthKey()}-01`;
+      rice.summaryTo = todayKey();
+    }
+    renderRiceStock();
+  });
+  [dom.riceSummaryFrom, dom.riceSummaryTo].forEach((input) => input.addEventListener("change", () => {
+    rice.summaryFrom = dom.riceSummaryFrom.value || rice.summaryFrom;
+    rice.summaryTo = dom.riceSummaryTo.value || rice.summaryTo;
+    renderRiceStock();
+  }));
 
   dom.riceShell.addEventListener("click", (event) => {
     const button = event.target.closest("[data-rice-action]");
@@ -5507,20 +5545,58 @@ function exportRiceCsv() {
 
 /* ----- สต็อก & สรุป (ผู้บริหาร) ----- */
 
-function renderRiceStock() {
+// Selected summary period → { from, to, label, word } (word goes into tile titles such as "รับซื้อวันนี้")
+function riceSummaryRange() {
+  const today = todayKey();
+  const period = rice.summaryPeriod || "month";
+  if (period === "today") return { from: today, to: today, label: `วันนี้ · ${formatDate(today)}`, word: "วันนี้" };
+  if (period === "7d") {
+    const date = new Date();
+    const from = toDateKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 6));
+    return { from, to: today, label: `7 วันล่าสุด · ${formatDate(from)} – ${formatDate(today)}`, word: "7 วันล่าสุด" };
+  }
+  if (period === "custom") {
+    let from = isDateKey(rice.summaryFrom) ? rice.summaryFrom : `${currentMonthKey()}-01`;
+    let to = isDateKey(rice.summaryTo) ? rice.summaryTo : today;
+    if (from > to) [from, to] = [to, from];
+    rice.summaryFrom = from;
+    rice.summaryTo = to;
+    return { from, to, label: from === to ? formatDate(from) : `${formatDate(from)} – ${formatDate(to)}`, word: "ช่วงที่เลือก" };
+  }
   const month = rice.summaryMonth || currentMonthKey();
-  dom.riceSummaryMonth.value = month;
-  dom.riceSummaryLabel.textContent = `เดือน${monthLabel(month)}`;
+  return {
+    from: `${month}-01`,
+    to: `${month}-${pad2(daysInMonth(month))}`,
+    label: `เดือน${monthLabel(month)}`,
+    word: month === currentMonthKey() ? "เดือนนี้" : `เดือน${shortMonthLabel(month)}`
+  };
+}
+
+function renderRiceStock() {
+  const range = riceSummaryRange();
+  const period = rice.summaryPeriod || "month";
+  dom.ricePeriodSeg.querySelectorAll("input[name=ricePeriod]").forEach((input) => { input.checked = input.value === period; });
+  dom.riceMonthField.classList.toggle("is-hidden", period !== "month");
+  dom.riceFromField.classList.toggle("is-hidden", period !== "custom");
+  dom.riceToField.classList.toggle("is-hidden", period !== "custom");
+  dom.riceSummaryMonth.value = rice.summaryMonth || currentMonthKey();
+  dom.riceSummaryFrom.value = rice.summaryFrom || "";
+  dom.riceSummaryTo.value = rice.summaryTo || "";
+  dom.riceSummaryLabel.textContent = range.label;
   const records = riceRecords();
-  const monthRecords = records.filter((record) => monthKey(record.date) === month);
+  const periodRecords = records.filter((record) => record.date >= range.from && record.date <= range.to);
+  // Stock is a point-in-time figure: if the period ends before the latest bill, rebuild stock as of the period end
+  const historical = records.some((record) => record.date > range.to);
+  const stockRecords = historical ? records.filter((record) => record.date <= range.to) : records;
+  const stockAsOf = historical ? ` · ณ ${formatDate(range.to)}` : "";
   const aggregate = (list) => {
     const kg = list.reduce((sum, record) => sum + numberValue(record.payKg), 0);
     const amount = list.reduce((sum, record) => sum + numberValue(record.total), 0);
     return { count: list.length, kg, amount, avg: kg ? amount / kg : 0 };
   };
-  const buy = aggregate(monthRecords.filter((record) => record.kind === "buy"));
-  const sell = aggregate(monthRecords.filter((record) => record.kind === "sell"));
-  const stock = rice.data?.stock || [];
+  const buy = aggregate(periodRecords.filter((record) => record.kind === "buy"));
+  const sell = aggregate(periodRecords.filter((record) => record.kind === "sell"));
+  const stock = historical ? riceStock(stockRecords) : rice.data?.stock || [];
   // Sum only types still in stock; oversold types (negative) are shown separately so the stock total does not come out too low
   const stockKg = stock.reduce((sum, item) => sum + Math.max(0, item.balanceKg), 0);
   const oversold = stock.filter((item) => item.balanceKg < 0);
@@ -5531,7 +5607,7 @@ function renderRiceStock() {
 
   // Remaining-stock value: cost = average buy price/kg of that type (merged piles use the average cost of their sources)
   // Forecast = average sell price/kg of that type (if never sold, use the overall average sell price, then cost)
-  const priceByType = (kind) => records.filter((record) => record.kind === kind).reduce((map, record) => {
+  const priceByType = (kind) => stockRecords.filter((record) => record.kind === kind).reduce((map, record) => {
     const key = riceTypeKey(record.riceType);
     const entry = map.get(key) || { kg: 0, amount: 0 };
     entry.kg += numberValue(record.payKg);
@@ -5545,19 +5621,20 @@ function renderRiceStock() {
     const entry = map.get(key);
     return entry && entry.kg ? entry.amount / entry.kg : 0;
   };
-  const allSell = aggregate(records.filter((record) => record.kind === "sell"));
-  const mergeCosts = records.filter((record) => record.kind === "merge").reduce((map, record) => {
+  const stockBuy = aggregate(stockRecords.filter((record) => record.kind === "buy"));
+  const allSell = aggregate(stockRecords.filter((record) => record.kind === "sell"));
+  const mergeCosts = stockRecords.filter((record) => record.kind === "merge").reduce((map, record) => {
     const key = riceTypeKey(record.riceType);
     const entry = map.get(key) || { kg: 0, amount: 0 };
     (record.sources || []).forEach((source) => {
       const kg = numberValue(source.kg);
       entry.kg += kg;
-      entry.amount += kg * (perKg(buyPrices, riceTypeKey(source.riceType)) || allBuy.avg);
+      entry.amount += kg * (perKg(buyPrices, riceTypeKey(source.riceType)) || stockBuy.avg);
     });
     map.set(key, entry);
     return map;
   }, new Map());
-  const costPerKg = (key) => perKg(buyPrices, key) || perKg(mergeCosts, key) || allBuy.avg;
+  const costPerKg = (key) => perKg(buyPrices, key) || perKg(mergeCosts, key) || stockBuy.avg;
   const salePerKg = (key) => perKg(sellPrices, key) || allSell.avg || costPerKg(key);
   const stockValues = new Map(stock.map((item) => {
     const key = riceTypeKey(item.riceType);
@@ -5569,17 +5646,17 @@ function renderRiceStock() {
   const forecastIncome = sell.amount + stockForecast;
 
   dom.riceStats.innerHTML = [
-    tile("stat-rice-buy", "รับซื้อเดือนนี้", money(buy.amount), `${kgText(buy.kg)} · ${buy.count} บิล · เฉลี่ย ${money(buy.avg)}/กก.`),
-    tile("stat-rice-sell", "ขายออกเดือนนี้", money(sell.amount), `${kgText(sell.kg)} · ${sell.count} บิล · เฉลี่ย ${money(sell.avg)}/กก.`),
-    tile("stat-rice-net", "ส่วนต่างขาย − ซื้อ", signedMoney(sell.amount - buy.amount), sell.avg && buy.avg ? `ส่วนต่างราคาเฉลี่ย ${signedMoney(sell.avg - buy.avg)}/กก.` : "ยอดขายหักยอดซื้อของเดือนนี้"),
-    tile("stat-rice-forecast", "คาดการณ์รายรับ", money(forecastIncome), `ขายเดือนนี้ ${money(sell.amount)} + ขายสต็อกที่เหลือ ${money(stockForecast)} · คาดกำไรจากสต็อก ${signedMoney(stockForecast - stockCost)}`),
-    tile("stat-rice-stock", "สต็อกข้าวคงเหลือ", tonText(stockKg), `${stock.filter((item) => item.balanceKg > 0).length} ชนิด/กอง · ${kgText(stockKg)}${oversold.length ? ` · ขายเกินสต็อก ${oversold.length} ชนิด (${kgText(-oversold.reduce((sum, item) => sum + item.balanceKg, 0))})` : ""}`),
-    tile("stat-rice-value", "มูลค่าสต็อกคงเหลือ", money(stockCost), `ตามราคาซื้อเฉลี่ย · ถ้าขายตามราคาขายเฉลี่ย ≈ ${money(stockForecast)}`),
+    tile("stat-rice-buy", `รับซื้อ${range.word}`, money(buy.amount), `${kgText(buy.kg)} · ${buy.count} บิล · เฉลี่ย ${money(buy.avg)}/กก.`),
+    tile("stat-rice-sell", `ขายออก${range.word}`, money(sell.amount), `${kgText(sell.kg)} · ${sell.count} บิล · เฉลี่ย ${money(sell.avg)}/กก.`),
+    tile("stat-rice-net", "ส่วนต่างขาย − ซื้อ", signedMoney(sell.amount - buy.amount), sell.avg && buy.avg ? `ส่วนต่างราคาเฉลี่ย ${signedMoney(sell.avg - buy.avg)}/กก.` : `ยอดขายหักยอดซื้อของ${range.word}`),
+    tile("stat-rice-forecast", "คาดการณ์รายรับ", money(forecastIncome), `ขาย${range.word} ${money(sell.amount)} + ขายสต็อกที่เหลือ ${money(stockForecast)} · <span class="expense-text">คาดกำไรจากสต็อก ${signedMoney(stockForecast - stockCost)}</span>`),
+    tile("stat-rice-stock", "สต็อกข้าวคงเหลือ", tonText(stockKg), `${stock.filter((item) => item.balanceKg > 0).length} ชนิด/กอง · ${kgText(stockKg)}${oversold.length ? ` · ขายเกินสต็อก ${oversold.length} ชนิด (${kgText(-oversold.reduce((sum, item) => sum + item.balanceKg, 0))})` : ""}${stockAsOf}`),
+    tile("stat-rice-value", "มูลค่าสต็อกคงเหลือ", money(stockCost), `ตามราคาซื้อเฉลี่ย · ถ้าขายตามราคาขายเฉลี่ย ≈ ${money(stockForecast)}${stockAsOf}`),
     tile("stat-rice-owe", "รับซื้อสะสม", money(allBuy.amount), `${kgText(allBuy.kg)} · ${allBuy.count} บิล (ทุกเดือน)`),
     tile("stat-rice-due", "ค้างรับจากผู้ซื้อ", money(sumTotal(due)), `${due.length} บิล (ทุกเดือน)`)
   ].join("");
 
-  const buyAmountByType = records.filter((record) => record.kind === "buy").reduce((map, record) => {
+  const buyAmountByType = stockRecords.filter((record) => record.kind === "buy").reduce((map, record) => {
     const key = riceTypeKey(record.riceType);
     map.set(key, (map.get(key) || 0) + numberValue(record.total));
     return map;
@@ -5638,7 +5715,7 @@ function renderRiceStock() {
     if (!byType.has(key)) byType.set(key, { riceType: label, buy: [], sell: [], stock: stockByType.get(key) || null });
     return byType.get(key);
   };
-  monthRecords.filter((record) => record.kind !== "merge").forEach((record) => {
+  periodRecords.filter((record) => record.kind !== "merge").forEach((record) => {
     const group = ensureTypeSummary(record.riceType);
     if (group) group[record.kind].push(record);
   });
@@ -5646,7 +5723,7 @@ function renderRiceStock() {
     const group = ensureTypeSummary(item.riceType);
     if (group) group.stock = item;
   });
-  dom.riceTypeSummaryNote.textContent = `เดือน${monthLabel(month)} · ${byType.size} ชนิด · แสดงคงเหลือจากสต็อกทั้งหมด`;
+  dom.riceTypeSummaryNote.textContent = `${range.label} · ${byType.size} ชนิด · คงเหลือ${historical ? ` ณ ${formatDate(range.to)}` : "ปัจจุบัน"}`;
   dom.riceTypeSummary.innerHTML = byType.size
     ? Array.from(byType.values()).sort((a, b) => a.riceType.localeCompare(b.riceType, "th")).map((group) => {
         const b = aggregate(group.buy);
@@ -5665,7 +5742,7 @@ function renderRiceStock() {
           </tr>
         `;
       }).join("")
-    : `<tr><td colspan="8"><div class="empty-state">ยังไม่มีการซื้อขายในเดือนนี้</div></td></tr>`;
+    : `<tr><td colspan="8"><div class="empty-state">ยังไม่มีการซื้อขายในช่วงนี้</div></td></tr>`;
 }
 
 /* ----- พิมพ์บิล ----- */
